@@ -17,9 +17,9 @@ def register(request):
             
             # Redirect based on user type
             if user.is_donor():
-                return redirect('donor_dashboard')
+                return redirect('profiles:donor_dashboard')
             else:
-                return redirect('recipient_dashboard')
+                return redirect('profiles:recipient_dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -44,11 +44,9 @@ def login_view(request):
                 if next_url:
                     return redirect(next_url)
                 elif user.is_donor():
-                    # return redirect('donor_dashboard')
-                    return redirect('profile')
+                    return redirect('profiles:donor_dashboard')
                 else:
-                    return redirect('profile')
-                    # return redirect('recipient_dashboard')
+                    return redirect('profiles:recipient_dashboard')
             else:
                 messages.error(request, 'Invalid username or password.')
         else:
@@ -65,21 +63,21 @@ def logout_view(request):
     return redirect('login')
 
 @login_required
-def profile_view(request):
+def account_view(request):
     user = request.user
-    return render(request, 'accounts/profile.html', {'user': user})
+    return render(request, 'accounts/account.html', {'user': user})
 
 @login_required
-def edit_profile(request):
+def edit_account(request):
     if request.method == 'POST':
         form = CustomUserChangeForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Profile updated successfully!')
-            return redirect('profile')
+            return redirect('profiles:profile_dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
         form = CustomUserChangeForm(instance=request.user)
     
-    return render(request, 'accounts/edit_profile.html', {'form': form})
+    return render(request, 'accounts/edit_account.html', {'form': form})
