@@ -314,7 +314,7 @@
                                     Recipients will appear here when they show interest in your donation.
                                 {% endif %}
                             </p>
-                            <a href="{% url 'find_matches' %}" 
+                            <a href="{% url 'matches:find_matches' %}" 
                                class="inline-block bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors font-medium">
                                 {% if request.user.is_recipient %}Find Donors{% else %}Update Profile{% endif %}
                             </a>
