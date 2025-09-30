@@ -113,28 +113,28 @@
                     <!-- Desktop Navigation -->
                     <div class="hidden md:ml-6 md:flex md:items-center md:space-x-4">
                         {% comment %} <a href="{% url 'profile_dashboard' %}"  {% endcomment %}
-                        <a href="{% url 'profile' %}" 
+                        <a href="{% url 'profiles:profile_dashboard' %}" 
                            class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                                  {% if request.resolver_match.url_name == 'profile_dashboard' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                                  {% if request.resolver_match.url_name == 'profiles:profile_dashboard' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                             🏠 Dashboard
                         </a>
                         
                         {% if user.is_authenticated %}
                             {% if user.is_donor %}
-                                <a href="{% url 'find_matches' %}" 
+                                <a href="{% url 'matches:find_matches' %}" 
                                    class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
                                           {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                                     🔍 Find Recipients
                                 </a>
                             {% else %}
-                                <a href="{% url 'find_matches' %}" 
+                                <a href="{% url 'matches:find_matches' %}" 
                                    class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
                                           {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                                     🔍 Find Donors
                                 </a>
                             {% endif %}
                             
-                            <a href="{% url 'my_matches' %}" 
+                            <a href="{% url 'matches:my_matches' %}" 
                                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
                                       {% if request.resolver_match.url_name == 'my_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                                 💌 My Matches
@@ -184,19 +184,19 @@
                              x-transition:leave-end="transform opacity-0 scale-95"
                              class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
                             
-                            <a href="{% url 'profile' %}" 
+                            <a href="{% url 'profiles:profile_dashboard' %}" 
                                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 👤 My Profile
                             </a>
                             
-                            <a href="{% url 'edit_profile' %}" 
+                            <a href="{% url 'accounts:account' %}" 
                                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 ⚙️ Settings
                             </a>
                             
                             <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
                             
-                            <a href="{% url 'logout' %}" 
+                            <a href="{% url 'accounts:logout' %}" 
                                class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 🚪 Logout
                             </a>
@@ -204,11 +204,11 @@
                     </div>
                     {% else %}
                     <div class="flex space-x-2">
-                        <a href="{% url 'login' %}" 
+                        <a href="{% url 'accounts:login' %}" 
                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 transition-colors">
                             Login
                         </a>
-                        <a href="{% url 'register' %}" 
+                        <a href="{% url 'accounts:register' %}" 
                            class="px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors">
                             Sign Up
                         </a>
@@ -239,25 +239,25 @@
              class="md:hidden border-t border-gray-200 dark:border-gray-700">
             <div class="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-800">
                 {% comment %} <a href="{% url 'profile_dashboard' %}"  {% endcomment %}
-                <a href="{% url 'profile' %}" 
+                <a href="{% url 'profiles:profile_dashboard' %}" 
                    class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
                     🏠 Dashboard
                 </a>
                 
                 {% if user.is_authenticated %}
                     {% if user.is_donor %}
-                        <a href="{% url 'find_matches' %}" 
+                        <a href="{% url 'matches:find_matches' %}" 
                            class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
                             🔍 Find Recipients
                         </a>
                     {% else %}
-                        <a href="{% url 'find_matches' %}" 
+                        <a href="{% url 'matches:find_matches' %}" 
                            class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
                             🔍 Find Donors
                         </a>
                     {% endif %}
                     
-                    <a href="{% url 'my_matches' %}" 
+                    <a href="{% url 'matches:my_matches' %}" 
                        class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
                         💌 My Matches
                     </a>
@@ -358,9 +358,9 @@
                     </h3>
                     <ul class="mt-4 space-y-2">
                         {% comment %} <li><a href="{% url 'profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Dashboard</a></li> {% endcomment %}
-                        <li><a href="{% url 'profile' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Dashboard</a></li>
-                        <li><a href="{% url 'find_matches' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Find Matches</a></li>
-                        <li><a href="{% url 'profile' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">My Profile</a></li>
+                        <li><a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Dashboard</a></li>
+                        <li><a href="{% url 'matches:find_matches' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Find Matches</a></li>
+                        <li><a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">My Profile</a></li>
                         <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Help Center</a></li>
                     </ul>
                 </div>
