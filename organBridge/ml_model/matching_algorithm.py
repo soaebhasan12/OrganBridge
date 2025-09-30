@@ -35,7 +35,7 @@ class OrganMatchingEngine:
                 self.tf_model = pickle.load(f)
             
             # Load TF-IDF matrix as numpy array - FIXED
-            self.tf_matrix = np.load(os.path.join(model_path, 'tf_matrix.npy'))  # CHANGED: .pkl -> .npy
+            self.tf_matrix = np.load(os.path.join(model_path, 'tf_matrix.npy'))
             
             # Load cosine similarity matrix
             self.cosine_sim = np.load(os.path.join(model_path, 'cosine_sim.npy'))
@@ -59,8 +59,8 @@ class OrganMatchingEngine:
             recipient_str = self.prepare_recipient_data(recipient)
             
             # Transform to TF-IDF vectors - FIXED
-            donor_vector = self.tf_model.transform([donor_str]).toarray()  # CHANGED: todense() -> toarray()
-            recipient_vector = self.tf_model.transform([recipient_str]).toarray()  # CHANGED: todense() -> toarray()
+            donor_vector = self.tf_model.transform([donor_str]).toarray()
+            recipient_vector = self.tf_model.transform([recipient_str]).toarray()
             
             # Calculate cosine similarity
             similarity = cosine_similarity(donor_vector, recipient_vector)[0][0]
@@ -75,7 +75,6 @@ class OrganMatchingEngine:
             # Fallback to basic scoring
             return self.basic_similarity_score(donor, recipient)
     
-    # ... (rest of the methods remain same)
     def prepare_donor_data(self, donor):
         """Donor data ko ML format mein convert karega"""
         return f"{donor.user.city},{donor.user.gender},{donor.user.race},{donor.user.age}," \
@@ -125,13 +124,39 @@ class OrganMatchingEngine:
         }
         return donor_blood in compatibility_map.get(recipient_blood, [])
     
+    def get_organ_list(self, organs_field):
+        """
+        Safely convert organs field to list of strings
+        Handles both list and dict types from JSONField
+        """
+        if isinstance(organs_field, list):
+            # If it's already a list, ensure all items are strings
+            return [str(organ) for organ in organs_field]
+        elif isinstance(organs_field, dict):
+            # If it's a dict, extract values or keys
+            return list(organs_field.values()) if organs_field.values() else list(organs_field.keys())
+        elif isinstance(organs_field, str):
+            # If it's a string, split by comma
+            return [organ.strip() for organ in organs_field.split(',') if organ.strip()]
+        else:
+            # Default empty list
+            return []
+    
     def find_matches(self, recipient, donors, top_n=10):
-        """Find best matches for a recipient"""
+        """Find best matches for a recipient - FIXED VERSION"""
         matches = []
         
+        # Get recipient's needed organs as a list
+        recipient_organs = self.get_organ_list(recipient.organs_needed)
+        
         for donor in donors:
-            # Check organ compatibility first
-            if not any(organ in donor.organs_donating for organ in recipient.organs_needed):
+            # Get donor's organs as a list
+            donor_organs = self.get_organ_list(donor.organs_donating)
+            
+            # Check organ compatibility first - FIXED
+            organs_matched = [organ for organ in donor_organs if organ in recipient_organs]
+            
+            if not organs_matched:
                 continue
             
             # Calculate match score
@@ -146,7 +171,7 @@ class OrganMatchingEngine:
                 'final_score': final_score,
                 'compatibility_details': {
                     'blood_match': self.check_blood_compatibility(donor.user.blood_type, recipient.user.blood_type),
-                    'organs_matched': list(set(donor.organs_donating) & set(recipient.organs_needed)),
+                    'organs_matched': organs_matched,
                     'location_same': donor.user.city == recipient.user.city
                 }
             })
