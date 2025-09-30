@@ -11,47 +11,78 @@ from .forms import MatchPreferenceForm, MessageForm
 
 @login_required
 def find_matches(request):
-    """Find matches for the current user (recipient)"""
+    """
+    Find matches for recipient using ML algorithm
+    WHY: Recipient ko compatible donors dhundne ke liye
+    WHERE: Recipient dashboard se call hoga
+    HOW: ML matching engine use karke best donors find karega
+    """
     if not request.user.is_recipient():
-        messages.error(request, 'Only organ recipients can search for matches.')
-        return redirect('profile')
+        messages.error(request, 'Only recipients can search for matches.')
+        return redirect('profiles:profile_dashboard')
     
     try:
-        recipient = RecipientProfile.objects.get(user=request.user)
-    except RecipientProfile.DoesNotExist:
-        messages.error(request, 'Please complete your recipient profile first.')
-        return redirect('edit_profile')  # You'll need to create this view
-    
-    # Get available donors
-    donors = DonorProfile.objects.filter(is_available=True)
-    
-    if not donors:
-        messages.info(request, 'No available donors at the moment. Please check back later.')
-        return render(request, 'matches/find_matches.html', {'matches': []})
-    
-    # Use ML matching engine
-    matching_engine = OrganMatchingEngine()
-    matches_data = matching_engine.find_matches(recipient, donors)
-    
-    # Create or update match records
-    matches = []
-    for match_data in matches_data:
-        match, created = OrganMatch.objects.update_or_create(
-            donor=match_data['donor'],
-            recipient=recipient,
-            defaults={
-                'match_score': match_data['score'],
-                'organs_matched': list(set(match_data['donor'].organs_donating) & set(recipient.organs_needed)),
-                'expires_at': timezone.now() + timedelta(days=30),  # 30-day expiration
-                'status': 'pending'
-            }
-        )
-        matches.append(match)
-    
-    return render(request, 'matches/find_matches.html', {
-        'matches': matches,
-        'recipient': recipient
-    })
+        # Get recipient profile
+        recipient = get_object_or_404(RecipientProfile, user=request.user)
+        
+        # Get all available donors
+        donors = DonorProfile.objects.filter(is_available=True)
+        
+        if not donors.exists():
+            messages.warning(request, 'No donors are currently available.')
+            return render(request, 'matches/find_matches.html', {
+                'recipient': recipient,
+                'matches': []
+            })
+        
+        # Use ML matching engine to find best matches
+        matching_engine = OrganMatchingEngine()
+        matches_data = matching_engine.find_matches(recipient, donors, top_n=10)
+        
+        # Format matches for template
+        formatted_matches = []
+        for match_data in matches_data:
+            formatted_matches.append({
+                'donor': match_data['donor'],
+                'match_score': match_data['final_score'],  # FIXED: Changed from 'score' to 'final_score'
+                'ml_score': match_data['ml_score'],
+                'compatibility': get_compatibility_level(match_data['final_score']),
+                'blood_compatible': match_data['compatibility_details']['blood_match'],
+                'organs_matched': match_data['compatibility_details']['organs_matched'],
+                'same_location': match_data['compatibility_details']['location_same'],
+            })
+        
+        context = {
+            'recipient': recipient,
+            'matches': formatted_matches,
+            'total_matches': len(formatted_matches),
+        }
+        
+        return render(request, 'matches/find_matches.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Error finding matches: {str(e)}')
+        return redirect('profiles:recipient_dashboard')
+
+
+# Utility Function
+def get_compatibility_level(score):
+    """
+    Convert numerical score to compatibility level
+    WHY: Score ko human-readable format mein convert karne ke liye
+    WHERE: Template mein display ke liye use hoga
+    HOW: Score range ke basis par level return karega
+    """
+    if score >= 90:
+        return 'Excellent'
+    elif score >= 75:
+        return 'Good'
+    elif score >= 60:
+        return 'Fair'
+    elif score >= 40:
+        return 'Poor'
+    else:
+        return 'Not Compatible'
 
 
 @login_required
@@ -172,3 +203,46 @@ def send_message_ajax(request, match_id):
             return JsonResponse({'error': 'Invalid message'}, status=400)
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+
+
+
+
+
+
+
+
+
+"""
+HACKATHON INTERVIEW QUESTIONS:
+
+1. Q: How does the ML matching algorithm work in your organ matching system?
+   A: We use TF-IDF vectorization on donor/recipient features (location, blood type, 
+      health status, etc.) and calculate cosine similarity to find compatible matches.
+      Business rules are then applied for blood type compatibility, urgency, and distance.
+
+2. Q: How do you handle the case when multiple recipients need the same organ?
+   A: The system prioritizes based on:
+      - Urgency level (critical > high > medium > low)
+      - Compatibility score from ML algorithm
+      - Blood type compatibility
+      - Geographic proximity
+      
+3. Q: What happens if no donors are available?
+   A: The system displays a message to the recipient and allows them to save their 
+      search criteria and get notified when new donors register.
+
+4. Q: How do you ensure data privacy in the matching process?
+   A: - Matches are only visible to involved parties (donor/recipient)
+      - Permission checks on every view
+      - Personal contact info hidden until match acceptance
+      - Login required for all matching operations
+
+5. Q: What optimization would you add to scale this to millions of users?
+   A: - Cache frequently accessed donor/recipient profiles
+      - Use database indexing on search fields (blood_type, organs, location)
+      - Implement async task queues (Celery) for ML calculations
+      - Add pagination for large result sets
+      - Use Redis for real-time match notifications
+"""
