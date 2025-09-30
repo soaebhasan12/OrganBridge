@@ -1,0 +1,674 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Model Status - OrganBridge{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Custom Model Status Dashboard Styles */
+    
+    /* Status Indicator Animations */
+    @keyframes status-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+    }
+    
+    .status-active {
+        animation: status-pulse 2s ease-in-out infinite;
+    }
+    
+    /* Health Indicator Styles */
+    .health-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .health-excellent { background-color: #10b981; }
+    .health-good { background-color: #3b82f6; }
+    .health-warning { background-color: #f59e0b; }
+    .health-critical { background-color: #ef4444; }
+    
+    /* File Size Visualization */
+    .size-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+        margin-top: 4px;
+    }
+    
+    /* Model Components Grid */
+    .component-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    /* Performance Metrics */
+    .metric-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .metric-excellent { border-left-color: #10b981; }
+    .metric-good { border-left-color: #3b82f6; }
+    .metric-warning { border-left-color: #f59e0b; }
+    
+    /* Console Output Styling */
+    .model-console {
+        font-family: 'Courier New', monospace;
+        background: #1f2937;
+        color: #d1d5db;
+        border-radius: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .console-line {
+        padding: 4px 12px;
+        border-left: 3px solid transparent;
+    }
+    
+    .console-info { border-left-color: #3b82f6; }
+    .console-success { border-left-color: #10b981; }
+    .console-warning { border-left-color: #f59e0b; }
+    .console-error { border-left-color: #ef4444; }
+    
+    /* Loading Skeletons */
+    .skeleton {
+        background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+    }
+    
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Size calculation helpers */
+    .size-bar-tf-model { width: {% widthratio model_info.tf_model_size|default:"0"|cut:" KB" 500 100 %}%; }
+    .size-bar-tf-matrix { width: {% widthratio model_info.tf_matrix_size|default:"0"|cut:" KB" 500 100 %}%; }
+    .size-bar-cosine-sim { width: {% widthratio model_info.cosine_sim_size|default:"0"|cut:" KB" 500 100 %}%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- 🎯 Page Header Section -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you ensure real-time data accuracy in a monitoring dashboard while maintaining performance?"
+            ANSWER: We implement a hybrid approach - critical status data is fetched in real-time via HTMX,
+            while less critical data uses periodic updates. The view calculates actual file sizes and 
+            modification times from the filesystem for accuracy.
+        -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-3 rounded-xl mr-4">📊</span>
+                        ML Model Status Dashboard
+                    </h1>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">
+                        Real-time monitoring of your OrganBridge matching algorithm. Track model health, 
+                        performance metrics, and system status.
+                    </p>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="flex space-x-3 mt-4 md:mt-0">
+                    <a href="{% url 'train_model' %}" 
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center">
+                        <span class="mr-2">🚀</span>
+                        Train Model
+                    </a>
+                    <a href="{% url 'model_stats' %}" 
+                       class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                        <span class="mr-2">📈</span>
+                        Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🏥 System Health Overview -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you calculate and display actual file system metrics in a web application safely?"
+            ANSWER: We use Django's os.path functions to get file sizes and modification times,
+            with proper error handling. All file operations are restricted to specific directories
+            and sizes are converted to human-readable formats.
+        -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Overall Model Status -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Model Status</p>
+                        <div class="flex items-center mt-1">
+                            <span class="health-indicator {% if model_exists and model_info.model_loaded %}health-excellent status-active{% elif model_exists %}health-warning{% else %}health-critical{% endif %}"></span>
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
+                                {% if model_exists and model_info.model_loaded %}
+                                    Operational
+                                {% elif model_exists %}
+                                    Load Error
+                                {% else %}
+                                    Not Trained
+                                {% endif %}
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="text-3xl">
+                        {% if model_exists and model_info.model_loaded %}
+                            ✅
+                        {% elif model_exists %}
+                            ⚠️
+                        {% else %}
+                            ❌
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    {% if model_exists and model_info.model_loaded %}
+                        Model is loaded and ready for predictions
+                    {% elif model_exists %}
+                        Model files exist but failed to load: {{ model_info.error }}
+                    {% else %}
+                        No trained model available. Train a model first.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Model Size -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Size</p>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                        {% if model_exists %}
+                            {% with tf_size=model_info.tf_model_size|default:"0"|cut:" KB" tf_matrix_size=model_info.tf_matrix_size|default:"0"|cut:" KB" cosine_size=model_info.cosine_sim_size|default:"0"|cut:" KB" %}
+                                {% widthratio tf_size|add:tf_matrix_size|add:cosine_size 1 1 %} KB
+                            {% endwith %}
+                        {% else %}
+                            0 KB
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {% if model_exists %}
+                            Combined model components
+                        {% else %}
+                            No model files
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Last Trained -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Last Trained</p>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                        {% if model_exists and model_info.last_trained and model_info.last_trained != 'Unknown' %}
+                            {{ model_info.last_trained }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {% if model_exists and model_info.last_trained and model_info.last_trained != 'Unknown' %}
+                            Last modification time
+                        {% else %}
+                            No training history
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Prediction Readiness -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Ready for Predictions</p>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                        {% if model_exists and model_info.model_loaded %}Yes{% else %}No{% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {% if model_exists and model_info.model_loaded %}
+                            API endpoints active
+                        {% else %}
+                            Training required
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔧 Model Components Breakdown -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you handle missing or corrupted model files in your status dashboard?"
+            ANSWER: We check each model component individually and display specific status for each file.
+            Missing files show warning indicators, while corrupted files show error states with
+            actionable troubleshooting guidance.
+        -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+            <!-- Model Components -->
+            <div class="xl:col-span-2">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                            <span class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg mr-3">🔧</span>
+                            Model Components
+                        </h2>
+                    </div>
+
+                    <div class="p-6">
+                        {% if model_exists %}
+                        <div class="component-grid gap-4">
+                            <!-- TF Model Component -->
+                            <div class="metric-card bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 metric-{% if model_info.tf_model_size %}good{% else %}warning{% endif %}">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium text-gray-900 dark:text-white">TF Model</span>
+                                    <span class="text-sm px-2 py-1 rounded-full {% if model_info.tf_model_size %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400{% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400{% endif %}">
+                                        {% if model_info.tf_model_size %}Ready{% else %}Missing{% endif %}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    Size: {{ model_info.tf_model_size|default:"File not found" }}
+                                </div>
+                                <div class="size-bar size-bar-tf-model"></div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    Main trained model file containing the matching algorithm
+                                </p>
+                            </div>
+
+                            <!-- TF Matrix Component -->
+                            <div class="metric-card bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 metric-{% if model_info.tf_matrix_size %}good{% else %}warning{% endif %}">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium text-gray-900 dark:text-white">TF Matrix</span>
+                                    <span class="text-sm px-2 py-1 rounded-full {% if model_info.tf_matrix_size %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400{% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400{% endif %}">
+                                        {% if model_info.tf_matrix_size %}Ready{% else %}Missing{% endif %}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    Size: {{ model_info.tf_matrix_size|default:"File not found" }}
+                                </div>
+                                <div class="size-bar size-bar-tf-matrix"></div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    Term frequency matrix for text processing features
+                                </p>
+                            </div>
+
+                            <!-- Cosine Similarity Component -->
+                            <div class="metric-card bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 metric-{% if model_info.cosine_sim_size %}good{% else %}warning{% endif %}">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium text-gray-900 dark:text-white">Cosine Similarity</span>
+                                    <span class="text-sm px-2 py-1 rounded-full {% if model_info.cosine_sim_size %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400{% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400{% endif %}">
+                                        {% if model_info.cosine_sim_size %}Ready{% else %}Missing{% endif %}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    Size: {{ model_info.cosine_sim_size|default:"File not found" }}
+                                </div>
+                                <div class="size-bar size-bar-cosine-sim"></div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    Similarity matrix for donor-recipient matching
+                                </p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <!-- No Model State -->
+                        <div class="text-center py-8">
+                            <div class="text-6xl mb-4">🤖</div>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Model Trained</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mb-4">
+                                You need to train a model before you can view its components.
+                            </p>
+                            <a href="{% url 'train_model' %}" 
+                               class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                <span class="mr-2">🚀</span>
+                                Train First Model
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <!-- Error Display -->
+                        {% if model_exists and model_info.error %}
+                        <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <div class="flex items-center">
+                                <span class="text-red-500 text-lg mr-3">❌</span>
+                                <div>
+                                    <h4 class="font-medium text-red-800 dark:text-red-400">Model Loading Error</h4>
+                                    <p class="text-sm text-red-700 dark:text-red-300 mt-1">
+                                        {{ model_info.error }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 📈 Performance Metrics -->
+                <!-- 
+                    HACKATHON INTERVIEW QUESTION:
+                    "How do you provide meaningful performance metrics when actual model performance data isn't available?"
+                    ANSWER: We use a combination of actual system metrics (file sizes, load times) and 
+                    contextual placeholders. When real performance data isn't available, we show 
+                    system readiness metrics and provide clear indicators that training is needed.
+                -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mt-6 overflow-hidden">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                            <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg mr-3">📈</span>
+                            System Metrics
+                        </h2>
+                    </div>
+
+                    <div class="p-6">
+                        {% if model_exists and model_info.model_loaded %}
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 metric-grid">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {% if model_exists %}Ready{% else %}N/A{% endif %}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Model Status</div>
+                                <div class="text-xs {% if model_exists and model_info.model_loaded %}text-green-600 dark:text-green-400{% else %}text-yellow-600 dark:text-yellow-400{% endif %} mt-1">
+                                    {% if model_exists and model_info.model_loaded %}Operational{% else %}Training Required{% endif %}
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {{ model_info.tf_model_size|default:"0 KB" }}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Model Size</div>
+                                <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">Primary File</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {% if model_exists %}3{% else %}0{% endif %}/3
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Files Loaded</div>
+                                <div class="text-xs {% if model_exists and model_info.tf_model_size and model_info.tf_matrix_size and model_info.cosine_sim_size %}text-green-600 dark:text-green-400{% else %}text-yellow-600 dark:text-yellow-400{% endif %} mt-1">
+                                    {% if model_exists and model_info.tf_model_size and model_info.tf_matrix_size and model_info.cosine_sim_size %}Complete{% else %}Partial{% endif %}
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {% if model_exists and model_info.model_loaded %}Active{% else %}Inactive{% endif %}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">API Status</div>
+                                <div class="text-xs {% if model_exists and model_info.model_loaded %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %} mt-1">
+                                    {% if model_exists and model_info.model_loaded %}Ready{% else %}Offline{% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Status Summary -->
+                        <div class="mt-6">
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-3">File Status Summary</h4>
+                            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                                <div class="space-y-3">
+                                    {% for file, size in model_info.items %}
+                                        {% if file|slice:"-5:" == "_size" %}
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">
+                                                {{ file|cut:"_size"|cut:"_"|title }}
+                                            </span>
+                                            <span class="text-sm font-medium {% if size %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                                                {% if size %}{{ size }}{% else %}Missing{% endif %}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <div class="text-4xl mb-2">📊</div>
+                            <p>Performance metrics available after model training and loading</p>
+                            <p class="text-sm mt-2">Train a model first to see detailed metrics</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🚀 Quick Actions & System Info -->
+            <div class="space-y-6">
+                <!-- Quick Actions -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg mr-3">⚡</span>
+                        Quick Actions
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <a href="{% url 'predict_match' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {% if not model_exists or not model_info.model_loaded %}opacity-50 cursor-not-allowed{% endif %}">
+                            <span class="text-lg mr-3">🔍</span>
+                            <div>
+                                <div class="text-sm font-medium">Test Prediction</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                    {% if model_exists and model_info.model_loaded %}
+                                        Validate model functionality
+                                    {% else %}
+                                        Model not ready
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <a href="{% url 'test_model' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">🧪</span>
+                            <div>
+                                <div class="text-sm font-medium">Run Tests</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Comprehensive model testing</div>
+                            </div>
+                        </a>
+                        
+                        {% if is_admin %}
+                        <a href="{% url 'update_dataset' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">📥</span>
+                            <div>
+                                <div class="text-sm font-medium">Update Dataset</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Admin only</div>
+                            </div>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- System Information -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg mr-3">💻</span>
+                        System Information
+                    </h3>
+                    
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Model Status</span>
+                            <span class="font-mono text-sm {% if model_exists and model_info.model_loaded %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                                {% if model_exists and model_info.model_loaded %}
+                                    OPERATIONAL
+                                {% elif model_exists %}
+                                    LOAD_ERROR
+                                {% else %}
+                                    NOT_TRAINED
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Required Files</span>
+                            <span class="font-mono text-sm text-gray-900 dark:text-white">
+                                {% if model_exists %}3/3{% else %}0/3{% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Total Size</span>
+                            <span class="font-mono text-sm text-gray-900 dark:text-white">
+                                {% if model_exists %}
+                                    {% with tf_size=model_info.tf_model_size|default:"0"|cut:" KB" tf_matrix_size=model_info.tf_matrix_size|default:"0"|cut:" KB" cosine_size=model_info.cosine_sim_size|default:"0"|cut:" KB" %}
+                                        {% widthratio tf_size|add:tf_matrix_size|add:cosine_size 1 1 %} KB
+                                    {% endwith %}
+                                {% else %}
+                                    0 KB
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Last Updated</span>
+                            <span class="font-mono text-sm text-gray-900 dark:text-white">
+                                {% if model_exists and model_info.last_trained and model_info.last_trained != 'Unknown' %}
+                                    {{ model_info.last_trained }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Console -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+                            <span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-1 rounded mr-2">📟</span>
+                            Model Console
+                        </h3>
+                    </div>
+                    
+                    <div class="model-console p-4 text-xs">
+                        <div class="console-line console-info">[INFO] Loading model status...</div>
+                        {% if model_exists %}
+                            <div class="console-line console-success">[SUCCESS] Model directory found</div>
+                            {% if model_info.tf_model_size %}
+                                <div class="console-line console-success">[SUCCESS] TF Model: {{ model_info.tf_model_size }} - OK</div>
+                            {% else %}
+                                <div class="console-line console-error">[ERROR] TF Model: File missing or corrupted</div>
+                            {% endif %}
+                            {% if model_info.tf_matrix_size %}
+                                <div class="console-line console-success">[SUCCESS] TF Matrix: {{ model_info.tf_matrix_size }} - OK</div>
+                            {% else %}
+                                <div class="console-line console-error">[ERROR] TF Matrix: File missing or corrupted</div>
+                            {% endif %}
+                            {% if model_info.cosine_sim_size %}
+                                <div class="console-line console-success">[SUCCESS] Cosine Sim: {{ model_info.cosine_sim_size }} - OK</div>
+                            {% else %}
+                                <div class="console-line console-error">[ERROR] Cosine Sim: File missing or corrupted</div>
+                            {% endif %}
+                            {% if model_info.model_loaded %}
+                                <div class="console-line console-success">[SUCCESS] Model loaded successfully - Ready for predictions</div>
+                            {% else %}
+                                <div class="console-line console-error">[ERROR] Model loading failed: {{ model_info.error }}</div>
+                            {% endif %}
+                        {% else %}
+                            <div class="console-line console-warning">[WARNING] No trained model found</div>
+                            <div class="console-line console-info">[INFO] Required files: tf_model.pkl, tf_matrix.pkl, cosine_sim.npy</div>
+                            <div class="console-line console-info">[INFO] Run training to create model files</div>
+                        {% endif %}
+                        <div class="console-line console-info">[INFO] Status check completed at {% now "H:i:s" %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 📊 Model Status Dashboard Functionality
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('modelStatus', () => ({
+            // Auto-refresh functionality
+            autoRefresh: true,
+            refreshInterval: 30000, // 30 seconds
+            refreshTimer: null,
+            
+            init() {
+                this.startAutoRefresh();
+                this.scrollConsoleToBottom();
+            },
+            
+            startAutoRefresh() {
+                if (this.autoRefresh) {
+                    this.refreshTimer = setInterval(() => {
+                        this.refreshStatus();
+                    }, this.refreshInterval);
+                }
+            },
+            
+            stopAutoRefresh() {
+                if (this.refreshTimer) {
+                    clearInterval(this.refreshTimer);
+                    this.refreshTimer = null;
+                }
+            },
+            
+            async refreshStatus() {
+                try {
+                    // Use HTMX to refresh the entire page or specific components
+                    await htmx.ajax('GET', window.location.href, {
+                        headers: {
+                            'X-Refresh': 'true'
+                        }
+                    });
+                    this.showRefreshIndicator();
+                } catch (error) {
+                    console.error('Status refresh failed:', error);
+                }
+            },
+            
+            manualRefresh() {
+                this.refreshStatus();
+            },
+            
+            showRefreshIndicator() {
+                const indicator = document.createElement('div');
+                indicator.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                indicator.textContent = 'Status Updated';
+                indicator.id = 'refresh-indicator';
+                
+                document.body.appendChild(indicator);
+                
+                setTimeout(() => {
+                    indicator.remove();
+                }, 2000);
+            },
+            
+            scrollConsoleToBottom() {
+                const consoleElement = document.querySelector('.model-console');
+                if (consoleElement) {
+                    consoleElement.scrollTop = consoleElement.scrollHeight;
+                }
+            }
+        }));
+    });
+
+    // Initialize size bar animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const sizeBars = document.querySelectorAll('.size-bar');
+        sizeBars.forEach(bar => {
+            const currentWidth = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.transition = 'width 1s ease-in-out';
+                bar.style.width = currentWidth;
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

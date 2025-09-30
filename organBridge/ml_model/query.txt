@@ -1,0 +1,61 @@
+## 🔥 **Technical Questions:**
+
+### **1. "TF-IDF use kyun kiya? Koi aur algorithm try kiya?"**
+**Answer:** TF-IDF simple aur effective hai text similarity ke liye. Humne cosine similarity ke saath combine kiya taki donor-recipient matching accurate ho. Alternative mein neural networks try kar sakte the, par humara dataset chhota tha.
+
+### **2. "Model ki accuracy 95% kaise calculate ki?"**
+**Answer:** Actually yeh real accuracy nahi hai - placeholder hai. Production mein hum confusion matrix, precision-recall use karenge. Abhi basic similarity metrics se kaam chal raha hai.
+
+### **3. "Cosine similarity matrix 863x863 ki size kyun hai?"**
+**Answer:** Kyunki humare paas 863 records hai dataset mein. Har record ko dusre sabhi records se compare karna padta hai, isliye O(n²) matrix banti hai.
+
+### **4. "File size itni chhoti kyun hai? Model sufficient hai?"**
+**Answer:** TF-IDF model lightweight hota hai. Humne max_features=200 rakha hai, isliye compact hai. Real production mein hum more features add karenge.
+
+## 🏥 **Domain-Specific Questions:**
+
+### **5. "Medical data ke liye TF-IDF suitable hai?"**
+**Answer:** Haan, kyunki hum categorical data ko text format mein convert kar rahe hain. Blood type, city, health status - yeh sab text similarity se compare ho jaate hain.
+
+### **6. "Blood type compatibility manually implement kyun ki?"**
+**Answer:** Medical rules fixed hain - O- universal donor, AB+ universal receiver. ML ko yeh rules automatically learn karne mein error ho sakta tha, isliye humne business logic separately add kiya.
+
+### **7. "Dataset mein only kidney data kyun hai?"**
+**Answer:** Starting mein humne kidney data se begin kiya. Future mein hum heart, liver ke liye bhi expand karenge. Modular design hai - easily extendable hai.
+
+## 🚀 **System Design Questions:**
+
+### **8. "Real-time predictions ke liye scalable hai?"**
+**Answer:** Haan, cosine similarity matrix pre-computed hai. Naya donor/recipient aaye toh fast similarity calculation ho jaata hai. Load balancing ke liye multiple instances chal sakte hain.
+
+### **9. "Model retraining automate kiya hai?"**
+**Answer:** Nahi, abhi manual hai. Admin dashboard se retrain kar sakte hain. Future mein hum cron jobs add karenge automatic retraining ke liye.
+
+### **10. "Error handling kaisi hai?"**
+**Answer:** Humne try-catch blocks daale hain. Agar ML model fail ho toh basic scoring use hota hai. System kabhi completely fail nahi hota.
+
+## 🔒 **Security & Ethics Questions:**
+
+### **11. "Medical data secure kaise rakha?"**
+**Answer:** Humne personally identifiable information remove kiya. Only medical parameters use kiye. Django authentication se access control kiya hai.
+
+### **12. "Bias in model hai kya?"**
+**Answer:** Hum race, gender se bias avoid karne ke liye careful hain. Future mein hum fairness metrics add karenge bias detection ke liye.
+
+## 📊 **Deployment Questions:**
+
+### **13. "Production deploy karna easy hoga?"**
+**Answer:** Haan, humne Django framework use kiya hai. Requirements.txt mein sab dependencies hain. Easy deployment possible hai.
+
+### **14. "Monitoring ka kya plan hai?"**
+**Answer:** Humare paas model status dashboard hai. Future mein hum logging, alerts add karenge performance tracking ke liye.
+
+## 💡 **Key Points to Emphasize:**
+
+1. **"Humne simple solution se start kiya, par scalable design rakha"**
+2. **"Medical safety paramount hai - isliye fallback mechanisms hain"**
+3. **"Admin dashboard se full control hai model management ka"**
+4. **"Dataset growing hai - model automatically improve hoga"**
+5. **"Real healthcare impact ke liye build kiya, just demo nahi"**
+
+Yeh questions anticipate karke prepare ho jaao - judges ko confidence milega ki aapne project deeply socha hai! 🚀

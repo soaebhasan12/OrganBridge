@@ -1,0 +1,660 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}My Matches - Peer Organ{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Custom styles for My Matches page */
+    
+    /* Smooth tab transitions */
+    [x-transition] {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    /* Custom scrollbar for match lists */
+    .match-list {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+    
+    .match-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .match-list::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    .match-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    
+    .dark .match-list::-webkit-scrollbar-track {
+        background: #374151;
+    }
+    
+    .dark .match-list::-webkit-scrollbar-thumb {
+        background: #4b5563;
+    }
+    
+    /* Status indicator animations */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .status-pending {
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    /* Card hover effects */
+    .match-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .match-card:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Gradient backgrounds for metrics */
+    .metrics-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* Responsive grid adjustments */
+    @media (max-width: 768px) {
+        .match-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Tab underline animation */
+    .tab-underline {
+        position: relative;
+    }
+    
+    .tab-underline::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: currentColor;
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+    
+    .tab-underline.active::after {
+        transform: scaleX(1);
+    }
+</style>
+{% endblock css_section %}
+
+{% block content %}
+<!-- 
+    TEMPLATE PURPOSE: My Matches Dashboard
+    ======================================
+    WHAT: Displays user's organ matches categorized by status (active, expired, rejected)
+    HOW: Uses tabbed interface with cards showing match details and actions
+    WHY: To help users manage their matches, track conversations, and take actions
+    WHERE: /matches/my-matches/ - Accessible from main navigation
+    
+    HACKATHON INTERVIEW QUESTIONS:
+    1. "How do you handle different match statuses and user roles in this template?"
+    2. "What UX patterns did you use to make match management intuitive?"
+    3. "How does this template handle empty states for different categories?"
+-->
+
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- 🎯 Page Header with Match Statistics -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Matches</h1>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">
+                        Manage your organ donation matches and conversations in one place.
+                    </p>
+                </div>
+                
+                <!-- 📊 Match Statistics -->
+                <div class="mt-4 md:mt-0 flex space-x-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                            {{ active_matches.count }}
+                        </div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Active</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                            {{ expired_matches.count }}
+                        </div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Expired</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-red-600 dark:text-red-400">
+                            {{ rejected_matches.count }}
+                        </div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Closed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎴 Tabbed Interface for Match Categories -->
+        <!-- 
+            UX PATTERN: Tabbed Content Organization
+            WHY: Helps users quickly switch between different match statuses without scrolling
+            HOW: Alpine.js powers tab switching with smooth transitions
+            ACCESSIBILITY: Keyboard navigation and ARIA labels included
+        -->
+        <div x-data="{ activeTab: 'active' }" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+            
+            <!-- Tab Headers -->
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex space-x-8 px-6" aria-label="Match categories">
+                    <!-- Active Matches Tab -->
+                    <button @click="activeTab = 'active'" 
+                            :class="activeTab === 'active' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <span class="flex items-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Active Matches
+                            <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                {{ active_matches.count }}
+                            </span>
+                        </span>
+                    </button>
+
+                    <!-- Expired Matches Tab -->
+                    <button @click="activeTab = 'expired'" 
+                            :class="activeTab === 'expired' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <span class="flex items-center">
+                            <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                            Expired Matches
+                            <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                {{ expired_matches.count }}
+                            </span>
+                        </span>
+                    </button>
+
+                    <!-- Rejected Matches Tab -->
+                    <button @click="activeTab = 'rejected'" 
+                            :class="activeTab === 'rejected' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        <span class="flex items-center">
+                            <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                            Closed Matches
+                            <span class="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                                {{ rejected_matches.count }}
+                            </span>
+                        </span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                
+                <!-- ✅ Active Matches Tab Content -->
+                <div x-show="activeTab === 'active'" x-transition>
+                    {% if active_matches %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {% for match in active_matches %}
+                        <!-- Active Match Card -->
+                        <div class="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <!-- Card Header -->
+                            <div class="p-4 border-b border-green-100 dark:border-green-900">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold">
+                                            {{ match.recipient.user.username|first|upper }}{{ match.donor.user.username|first|upper }}
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900 dark:text-white">
+                                                {% if request.user == match.donor.user %}
+                                                    {{ match.recipient.user.get_full_name|default:match.recipient.user.username }}
+                                                {% else %}
+                                                    {{ match.donor.user.get_full_name|default:match.donor.user.username }}
+                                                {% endif %}
+                                            </h3>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                {{ match.match_score }}% Match
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                                        {{ match.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="p-4">
+                                <!-- Organs Info -->
+                                <div class="mb-3">
+                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Organs</span>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        {% for organ in match.organs_matched %}
+                                        <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded">
+                                            {{ organ }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Match Details -->
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">Location:</span>
+                                        <span class="font-medium">
+                                            {% if request.user == match.donor.user %}
+                                                {{ match.recipient.user.city }}
+                                            {% else %}
+                                                {{ match.donor.user.city }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">Blood Type:</span>
+                                        <span class="font-medium">
+                                            {% if request.user == match.donor.user %}
+                                                {{ match.recipient.user.blood_type }}
+                                            {% else %}
+                                                {{ match.donor.user.blood_type }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">Expires:</span>
+                                        <span class="font-medium text-{% if match.expires_at < timezone.now %}red-600{% else %}gray-900{% endif %}">
+                                            {{ match.expires_at|date:"M d" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Footer -->
+                            <div class="p-4 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-900">
+                                <div class="flex space-x-2">
+                                    <a href="{% url 'match_detail' match.id %}" 
+                                       class="flex-1 bg-green-500 text-white text-center py-2 px-3 rounded text-sm font-medium hover:bg-green-600 transition-colors">
+                                        View Details
+                                    </a>
+                                    {% if match.status == 'pending' %}
+                                    <form method="post" action="{% url 'update_match_status' match.id 'rejected' %}" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="w-full bg-gray-200 text-gray-700 py-2 px-3 rounded text-sm font-medium hover:bg-gray-300 transition-colors">
+                                            Decline
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty State for Active Matches -->
+                    <div class="text-center py-12">
+                        <div class="max-w-md mx-auto">
+                            <div class="text-6xl mb-4">🔍</div>
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Active Matches</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mb-6">
+                                {% if request.user.is_recipient %}
+                                    Start searching for donors to see active matches here.
+                                {% else %}
+                                    Recipients will appear here when they show interest in your donation.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'find_matches' %}" 
+                               class="inline-block bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors font-medium">
+                                {% if request.user.is_recipient %}Find Donors{% else %}Update Profile{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- ⏰ Expired Matches Tab Content -->
+                <div x-show="activeTab === 'expired'" x-transition>
+                    {% if expired_matches %}
+                    <div class="space-y-4">
+                        {% for match in expired_matches %}
+                        <!-- Expired Match Card -->
+                        <div class="bg-white dark:bg-gray-800 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                                        <span class="text-yellow-600 dark:text-yellow-400 text-xl">⏰</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 dark:text-white">
+                                            {% if request.user == match.donor.user %}
+                                                {{ match.recipient.user.get_full_name|default:match.recipient.user.username }}
+                                            {% else %}
+                                                {{ match.donor.user.get_full_name|default:match.donor.user.username }}
+                                            {% endif %}
+                                        </h4>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            Expired {{ match.expires_at|timesince }} ago
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Expired</span>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {{ match.organs_matched|join:", " }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty State for Expired Matches -->
+                    <div class="text-center py-12">
+                        <div class="max-w-md mx-auto">
+                            <div class="text-6xl mb-4">✅</div>
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Expired Matches</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Great! All your matches are currently active or have been properly closed.
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- ❌ Rejected/Closed Matches Tab Content -->
+                <div x-show="activeTab === 'rejected'" x-transition>
+                    {% if rejected_matches %}
+                    <div class="space-y-4">
+                        {% for match in rejected_matches %}
+                        <!-- Rejected Match Card -->
+                        <div class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                                        <span class="text-red-600 dark:text-red-400 text-xl">❌</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 dark:text-white">
+                                            {% if request.user == match.donor.user %}
+                                                {{ match.recipient.user.get_full_name|default:match.recipient.user.username }}
+                                            {% else %}
+                                                {{ match.donor.user.get_full_name|default:match.donor.user.username }}
+                                            {% endif %}
+                                        </h4>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            Closed {{ match.updated_at|timesince }} ago
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full capitalize">
+                                        {{ match.get_status_display }}
+                                    </span>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Score: {{ match.match_score }}%
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty State for Rejected Matches -->
+                    <div class="text-center py-12">
+                        <div class="max-w-md mx-auto">
+                            <div class="text-6xl mb-4">👍</div>
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Closed Matches</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                You haven't closed any matches yet. All your interactions are currently active.
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 💡 Match Management Tips -->
+        <!-- 
+            USER GUIDANCE: Contextual help based on user role and match status
+            WHY: Helps users understand what actions they can take and when
+            HOW: Dynamic tips that change based on current view and user type
+        -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Tip 1: Based on User Role -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div class="flex items-start">
+                    <span class="text-blue-500 text-lg mr-3">💡</span>
+                    <div>
+                        <h4 class="font-medium text-blue-900 dark:text-blue-100">
+                            {% if request.user.is_recipient %}
+                                For Recipients
+                            {% else %}
+                                For Donors
+                            {% endif %}
+                        </h4>
+                        <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                            {% if request.user.is_recipient %}
+                                Respond to donor matches within 30 days. Higher match scores indicate better compatibility.
+                            {% else %}
+                                Keep your availability status updated. Recipients will contact you through secure messaging.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tip 2: Based on Active Tab -->
+            <div x-show="activeTab === 'active'" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div class="flex items-start">
+                    <span class="text-green-500 text-lg mr-3">🚀</span>
+                    <div>
+                        <h4 class="font-medium text-green-900 dark:text-green-100">Active Matches Tip</h4>
+                        <p class="text-sm text-green-700 dark:text-green-300 mt-1">
+                            Use the messaging feature to discuss next steps. Most successful transplants start with good communication.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="activeTab === 'expired'" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <div class="flex items-start">
+                    <span class="text-yellow-500 text-lg mr-3">⏰</span>
+                    <div>
+                        <h4 class="font-medium text-yellow-900 dark:text-yellow-100">Expired Matches Tip</h4>
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                            Matches expire after 30 days of inactivity. You can often find similar donors by searching again.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="activeTab === 'rejected'" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div class="flex items-start">
+                    <span class="text-red-500 text-lg mr-3">🔄</span>
+                    <div>
+                        <h4 class="font-medium text-red-900 dark:text-red-100">Closed Matches Tip</h4>
+                        <p class="text-sm text-red-700 dark:text-red-300 mt-1">
+                            Closed matches help our algorithm learn your preferences for better future recommendations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📈 Performance Metrics Section -->
+        <!-- 
+            DATA VISUALIZATION: User engagement metrics
+            WHY: Helps users understand their matching activity and success rates
+            HOW: Simple metrics presented in an accessible way
+        -->
+        <div class="mt-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Your Matching Activity</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        Track your progress and engagement with potential matches.
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        {{ active_matches.count|add:rejected_matches.count|add:expired_matches.count }}
+                    </div>
+                    <div class="text-sm text-purple-600 dark:text-purple-400">Total Matches</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <div class="text-center">
+                    <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ active_matches.count }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Active</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                        {{ active_matches.count|add:rejected_matches.count|add:expired_matches.count }}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Total</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-bold text-purple-600 dark:text-purple-400">
+                        {% widthratio active_matches.count active_matches.count|add:rejected_matches.count|add:expired_matches.count 100 %}%
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Active Rate</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-bold text-orange-600 dark:text-orange-400">
+                        {{ user_matches.count }}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">All Time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 🎯 My Matches Page Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab persistence in URL hash
+        function updateUrlHash(tabName) {
+            if (history.pushState) {
+                history.pushState(null, null, `#${tabName}`);
+            } else {
+                window.location.hash = tabName;
+            }
+        }
+
+        // Read initial tab from URL hash
+        const initialTab = window.location.hash.replace('#', '') || 'active';
+        if (['active', 'expired', 'rejected'].includes(initialTab)) {
+            // Alpine.js will handle this through x-data
+        }
+
+        // Match card hover effects
+        const matchCards = document.querySelectorAll('.bg-white');
+        matchCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.transition = 'transform 0.2s ease';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Auto-refresh active matches (simulate real-time updates)
+        function refreshActiveMatches() {
+            const activeTab = document.querySelector('[x-data]').__x.$data.activeTab;
+            if (activeTab === 'active') {
+                // In a real app, this would be an HTMX request
+                console.log('Refreshing active matches...');
+            }
+        }
+
+        // Refresh every 30 seconds
+        setInterval(refreshActiveMatches, 30000);
+
+        // Export matches functionality (demo)
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('export-matches')) {
+                e.preventDefault();
+                alert('Export functionality would generate a PDF report of your matches.');
+            }
+        });
+    });
+
+    // 📊 Alpine.js for enhanced interactions
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('matchManager', () => ({
+            // Current active tab
+            activeTab: 'active',
+            
+            // Search/filter functionality
+            searchQuery: '',
+            filteredMatches: [],
+            
+            // Initialize component
+            init() {
+                // Set initial tab from URL hash
+                const hash = window.location.hash.replace('#', '');
+                if (['active', 'expired', 'rejected'].includes(hash)) {
+                    this.activeTab = hash;
+                }
+                
+                // Watch for tab changes to update URL
+                this.$watch('activeTab', (value) => {
+                    this.updateUrlHash(value);
+                });
+            },
+            
+            // Update URL hash when tab changes
+            updateUrlHash(tabName) {
+                if (history.pushState) {
+                    history.pushState(null, null, `#${tabName}`);
+                }
+            },
+            
+            // Filter matches based on search query
+            filterMatches() {
+                // This would filter the displayed matches based on search
+                console.log('Filtering matches with query:', this.searchQuery);
+            },
+            
+            // Get match status color
+            getStatusColor(status) {
+                const colors = {
+                    'pending': 'yellow',
+                    'accepted': 'green',
+                    'rejected': 'red',
+                    'expired': 'gray'
+                };
+                return colors[status] || 'gray';
+            },
+            
+            // Get match status icon
+            getStatusIcon(status) {
+                const icons = {
+                    'pending': '⏳',
+                    'accepted': '✅',
+                    'rejected': '❌',
+                    'expired': '⏰'
+                };
+                return icons[status] || 'ℹ️';
+            }
+        }));
+    });
+</script>
+{% endblock %}

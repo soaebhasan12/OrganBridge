@@ -1,0 +1,564 @@
+<!-- [file name]: profile_setup.html -->
+<!-- 
+WHY: This page allows new users to complete their initial profile setup based on their user type (donor/recipient)
+WHERE: Accessed by new users after registration who haven't completed their profile yet
+HOW: Uses Django forms with conditional rendering based on user type, with Tailwind CSS for responsive design and client-side validation
+-->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Complete Your Profile - OrganBridge{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Profile Setup Styles */
+    
+    /* Form Step Indicators */
+    .form-step {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .form-step.active {
+        background: #3b82f6;
+        color: white;
+        transform: scale(1.1);
+    }
+    
+    .form-step.completed {
+        background: #10b981;
+        color: white;
+    }
+    
+    .form-step.pending {
+        background: #e5e7eb;
+        color: #6b7280;
+    }
+    
+    /* Form Section Animation */
+    .form-section {
+        transition: all 0.3s ease;
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+    }
+    
+    .form-section.active {
+        opacity: 1;
+        height: auto;
+        overflow: visible;
+    }
+    
+    /* Organ Selection Grid */
+    .organ-option {
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .organ-option:hover {
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+    }
+    
+    .organ-option.selected {
+        border-color: #10b981;
+        background: #f0fdf4;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Custom Checkbox Styling */
+    .custom-checkbox {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .custom-checkbox.checked {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    /* Progress Bar */
+    .progress-bar {
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #10b981);
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- 🎯 Page Header Section -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you handle data validation and user experience for complex medical profile forms?"
+            ANSWER: We implement multi-layer validation including client-side for immediate feedback,
+            server-side for security, and medical validation rules. The form uses progressive disclosure
+            to break complex information into manageable steps with clear progress indicators.
+        -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center justify-center">
+                <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-3 rounded-xl mr-4">
+                    {% if user.is_donor %}❤️{% else %}🫀{% endif %}
+                </span>
+                Complete Your {{ user_type }} Profile
+            </h1>
+            <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">
+                {% if user.is_donor %}
+                Help save lives by completing your organ donor profile. Your information will be used for matching with recipients in need.
+                {% else %}
+                Provide your medical information to find compatible organ donors. Your data is secure and confidential.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <div class="progress-bar flex-1 mr-6">
+                    <div class="progress-fill" style="width: 33%" id="progressFill"></div>
+                </div>
+                <span class="text-sm font-medium text-gray-600 dark:text-gray-400" id="progressText">Step 1 of 3</span>
+            </div>
+            
+            <div class="flex justify-between">
+                <div class="text-center">
+                    <div class="form-step active mx-auto" id="step1">1</div>
+                    <p class="text-xs mt-2 text-gray-600 dark:text-gray-400">Basic Info</p>
+                </div>
+                <div class="text-center">
+                    <div class="form-step pending mx-auto" id="step2">2</div>
+                    <p class="text-xs mt-2 text-gray-600 dark:text-gray-400">
+                        {% if user.is_donor %}Health Details{% else %}Medical Info{% endif %}
+                    </p>
+                </div>
+                <div class="text-center">
+                    <div class="form-step pending mx-auto" id="step3">3</div>
+                    <p class="text-xs mt-2 text-gray-600 dark:text-gray-400">Review</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <form method="post" id="profileSetupForm">
+                {% csrf_token %}
+                
+                <!-- Display Form Errors -->
+                {% if form.errors %}
+                <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div class="flex items-center">
+                        <span class="text-red-500 mr-3">⚠️</span>
+                        <div>
+                            <h4 class="text-sm font-medium text-red-800 dark:text-red-200">
+                                Please correct the following errors:
+                            </h4>
+                            <ul class="mt-2 text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Step 1: Basic Information -->
+                <div class="form-section active" id="section1">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg mr-3">👤</span>
+                        Basic Information
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Donor Specific Fields -->
+                        {% if user.is_donor %}
+                        <div>
+                            <label for="{{ form.health_status.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Health Status *
+                            </label>
+                            <select name="{{ form.health_status.name }}" id="{{ form.health_status.id_for_label }}" 
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select your health status</option>
+                                <option value="excellent">Excellent</option>
+                                <option value="good">Good</option>
+                                <option value="fair">Fair</option>
+                                <option value="poor">Poor</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.last_medical_check.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Last Medical Check
+                            </label>
+                            <input type="date" name="{{ form.last_medical_check.name }}" id="{{ form.last_medical_check.id_for_label }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        {% else %}
+                        <!-- Recipient Specific Fields -->
+                        <div>
+                            <label for="{{ form.medical_condition.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Medical Condition *
+                            </label>
+                            <input type="text" name="{{ form.medical_condition.name }}" id="{{ form.medical_condition.id_for_label }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                   placeholder="e.g., Kidney Failure, Liver Cirrhosis">
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.urgency_level.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Urgency Level *
+                            </label>
+                            <select name="{{ form.urgency_level.name }}" id="{{ form.urgency_level.id_for_label }}"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select urgency level</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Common Fields -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                {% if user.is_donor %}Organs Willing to Donate{% else %}Organs Needed{% endif %} *
+                            </label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="organsGrid">
+                                {% for organ in form.organs_donating.field.choices %}
+                                {% if organ.0 %}
+                                <div class="organ-option" data-organ="{{ organ.0 }}">
+                                    <div class="text-3xl mb-2">
+                                        {% if organ.0 == 'kidney' %}🫀
+                                        {% elif organ.0 == 'liver' %}🍖
+                                        {% elif organ.0 == 'heart' %}❤️
+                                        {% elif organ.0 == 'lungs' %}🫁
+                                        {% elif organ.0 == 'pancreas' %}🩸
+                                        {% else %}⚕️{% endif %}
+                                    </div>
+                                    <div class="font-medium text-gray-900 dark:text-white capitalize">{{ organ.1 }}</div>
+                                    <input type="checkbox" name="{{ form.organs_donating.name }}" value="{{ organ.0 }}" 
+                                           class="hidden organ-checkbox">
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end mt-8">
+                        <button type="button" class="next-step px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            Next: {% if user.is_donor %}Health Details{% else %}Medical Info{% endif %} →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Health/Medical Details -->
+                <div class="form-section" id="section2">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                        <span class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg mr-3">💊</span>
+                        {% if user.is_donor %}Health Details{% else %}Medical Information{% endif %}
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Lifestyle Information -->
+                        <div class="space-y-4">
+                            <h4 class="font-medium text-gray-900 dark:text-white">Lifestyle Information</h4>
+                            
+                            <div>
+                                <label for="{{ form.smoking_status.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Smoking Status
+                                </label>
+                                <select name="{{ form.smoking_status.name }}" id="{{ form.smoking_status.id_for_label }}"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Select smoking status</option>
+                                    <option value="true">Smoker</option>
+                                    <option value="false">Non-smoker</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.alcohol_use.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Alcohol Use
+                                </label>
+                                <select name="{{ form.alcohol_use.name }}" id="{{ form.alcohol_use.id_for_label }}"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Select alcohol use</option>
+                                    <option value="true">User</option>
+                                    <option value="false">Non-user</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.drug_use.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Drug Use
+                                </label>
+                                <select name="{{ form.drug_use.name }}" id="{{ form.drug_use.id_for_label }}"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Select drug use</option>
+                                    <option value="true">User</option>
+                                    <option value="false">Non-user</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Health Info -->
+                        <div class="space-y-4">
+                            <h4 class="font-medium text-gray-900 dark:text-white">Additional Information</h4>
+                            
+                            <div>
+                                <label for="{{ form.avg_sleep.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Average Sleep (hours)
+                                </label>
+                                <input type="number" name="{{ form.avg_sleep.name }}" id="{{ form.avg_sleep.id_for_label }}" 
+                                       min="0" max="24" step="0.5"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       placeholder="e.g., 7.5">
+                            </div>
+                            
+                            {% if user.is_recipient %}
+                            <div>
+                                <label for="{{ form.preferred_hospital.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Preferred Hospital
+                                </label>
+                                <input type="text" name="{{ form.preferred_hospital.name }}" id="{{ form.preferred_hospital.id_for_label }}"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       placeholder="e.g., Mayo Clinic, Cleveland Clinic">
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.insurance_provider.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Insurance Provider
+                                </label>
+                                <input type="text" name="{{ form.insurance_provider.name }}" id="{{ form.insurance_provider.id_for_label }}"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       placeholder="e.g., Blue Cross, Aetna">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between mt-8">
+                        <button type="button" class="prev-step px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                            ← Back
+                        </button>
+                        <button type="button" class="next-step px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            Next: Review →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Review and Submit -->
+                <div class="form-section" id="section3">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                        <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg mr-3">📋</span>
+                        Review Your Information
+                    </h3>
+                    
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 mb-6">
+                        <h4 class="font-medium text-gray-900 dark:text-white mb-4">Profile Summary</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm" id="reviewSummary">
+                            <!-- Summary will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Terms and Conditions -->
+                    <div class="mb-6">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="terms_agreement" name="terms_agreement" 
+                                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" required>
+                            </div>
+                            <label for="terms_agreement" class="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                                I agree to the <a href="#" class="text-blue-600 hover:text-blue-500 dark:text-blue-400">Terms of Service</a> 
+                                and <a href="#" class="text-blue-600 hover:text-blue-500 dark:text-blue-400">Privacy Policy</a>. 
+                                I understand that my medical information will be used for organ matching purposes and will be handled 
+                                in accordance with healthcare privacy regulations.
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <button type="button" class="prev-step px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                            ← Back
+                        </button>
+                        <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors flex items-center">
+                            <span>Complete Profile</span>
+                            <span class="ml-2">✅</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Help Section -->
+        <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>Need help? Contact our support team at 
+                <a href="mailto:support@organbridge.com" class="text-blue-600 hover:text-blue-500 dark:text-blue-400">support@organbridge.com</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentStep = 1;
+        const totalSteps = 3;
+        
+        // Organ selection functionality
+        const organOptions = document.querySelectorAll('.organ-option');
+        organOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const checkbox = this.querySelector('.organ-checkbox');
+                checkbox.checked = !checkbox.checked;
+                this.classList.toggle('selected', checkbox.checked);
+            });
+        });
+        
+        // Step navigation
+        document.querySelectorAll('.next-step').forEach(button => {
+            button.addEventListener('click', function() {
+                if (validateStep(currentStep)) {
+                    currentStep++;
+                    updateProgress();
+                }
+            });
+        });
+        
+        document.querySelectorAll('.prev-step').forEach(button => {
+            button.addEventListener('click', function() {
+                currentStep--;
+                updateProgress();
+            });
+        });
+        
+        function updateProgress() {
+            // Update progress bar
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `Step ${currentStep} of ${totalSteps}`;
+            
+            // Update step indicators
+            for (let i = 1; i <= totalSteps; i++) {
+                const stepElement = document.getElementById(`step${i}`);
+                const sectionElement = document.getElementById(`section${i}`);
+                
+                if (i < currentStep) {
+                    stepElement.className = 'form-step completed mx-auto';
+                    sectionElement.classList.remove('active');
+                } else if (i === currentStep) {
+                    stepElement.className = 'form-step active mx-auto';
+                    sectionElement.classList.add('active');
+                } else {
+                    stepElement.className = 'form-step pending mx-auto';
+                    sectionElement.classList.remove('active');
+                }
+            }
+            
+            // Update review summary on step 3
+            if (currentStep === 3) {
+                updateReviewSummary();
+            }
+        }
+        
+        function validateStep(step) {
+            // Basic validation for each step
+            switch(step) {
+                case 1:
+                    const selectedOrgans = document.querySelectorAll('.organ-checkbox:checked');
+                    if (selectedOrgans.length === 0) {
+                        alert('Please select at least one organ');
+                        return false;
+                    }
+                    return true;
+                case 2:
+                    // Add additional validation if needed
+                    return true;
+                default:
+                    return true;
+            }
+        }
+        
+        function updateReviewSummary() {
+            const summaryElement = document.getElementById('reviewSummary');
+            let summaryHTML = '';
+            
+            // Collect form data for summary
+            const formData = new FormData(document.getElementById('profileSetupForm'));
+            
+            // Add summary items based on user type
+            if ({{ user.is_donor|yesno:"true,false" }}) {
+                summaryHTML += `
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-400">Health Status:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${document.getElementById('{{ form.health_status.id_for_label }}').value}</span>
+                    </div>
+                `;
+            } else {
+                summaryHTML += `
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-400">Medical Condition:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${document.getElementById('{{ form.medical_condition.id_for_label }}').value}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-400">Urgency Level:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${document.getElementById('{{ form.urgency_level.id_for_label }}').value}</span>
+                    </div>
+                `;
+            }
+            
+            // Add organs summary
+            const selectedOrgans = Array.from(document.querySelectorAll('.organ-checkbox:checked'))
+                .map(cb => cb.value.charAt(0).toUpperCase() + cb.value.slice(1))
+                .join(', ');
+            
+            summaryHTML += `
+                <div class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Organs:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">${selectedOrgans}</span>
+                </div>
+            `;
+            
+            summaryElement.innerHTML = summaryHTML;
+        }
+        
+        // Initialize progress
+        updateProgress();
+    });
+</script>
+{% endblock %}

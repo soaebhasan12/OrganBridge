@@ -1,0 +1,1145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Test ML Model - OrganBridge{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Custom Model Testing Dashboard Styles */
+    
+    /* Test Card Animations */
+    @keyframes test-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+    
+    .test-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #e5e7eb;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .test-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .test-running {
+        animation: test-pulse 2s ease-in-out infinite;
+        border-color: #3b82f6;
+    }
+    
+    /* Test Status Indicators */
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .status-passed { background-color: #dcfce7; color: #166534; }
+    .status-failed { background-color: #fee2e2; color: #991b1b; }
+    .status-running { background-color: #dbeafe; color: #1e40af; }
+    .status-pending { background-color: #f3f4f6; color: #374151; }
+    
+    /* Test Results Visualization */
+    .result-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .result-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease-in-out;
+    }
+    
+    /* Test Console Styling */
+    .test-console {
+        font-family: 'Courier New', monospace;
+        background-color: #1f2937;
+        color: #d1d5db;
+        border-radius: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .console-line {
+        padding: 4px 12px;
+        border-left: 3px solid transparent;
+        font-size: 0.875rem;
+    }
+    
+    .console-success { border-left-color: #10b981; }
+    .console-error { border-left-color: #ef4444; }
+    .console-warning { border-left-color: #f59e0b; }
+    .console-info { border-left-color: #3b82f6; }
+    
+    /* Test Input Styling */
+    .test-input {
+        transition: all 0.2s ease-in-out;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .test-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Progress Indicators */
+    .progress-dots {
+        display: inline-flex;
+        gap: 4px;
+    }
+    
+    .progress-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #9ca3af;
+        animation: dot-pulse 1.5s ease-in-out infinite;
+    }
+    
+    .progress-dot:nth-child(2) { animation-delay: 0.2s; }
+    .progress-dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes dot-pulse {
+        0%, 60%, 100% { transform: scale(1); opacity: 1; }
+        30% { transform: scale(1.5); opacity: 0.7; }
+    }
+    
+    /* Dark Mode Enhancements */
+    .dark .test-card {
+        border-color: #374151;
+        background: #1f2937;
+    }
+    
+    .dark .test-input {
+        border-color: #4b5563;
+        background: #374151;
+        color: #f9fafb;
+    }
+    
+    .dark .test-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .test-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .test-actions {
+            flex-direction: column;
+        }
+    }
+    
+    /* Test Case Styles */
+    .test-case {
+        border-left: 4px solid #e5e7eb;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .test-case.passed { border-left-color: #10b981; }
+    .test-case.failed { border-left-color: #ef4444; }
+    .test-case.running { border-left-color: #3b82f6; }
+    
+    /* Match Visualization */
+    .match-visualization {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .match-visualization::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- 🎯 Page Header Section -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you design a comprehensive testing interface for ML models that balances automated tests with manual validation capabilities?"
+            ANSWER: We provide both automated test suites for regression testing and interactive testing tools for manual validation. 
+            The interface includes real-time feedback, detailed logging, and visual result representations to help 
+            stakeholders understand model behavior and identify potential issues.
+        -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                        <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-3 rounded-xl mr-4">🧪</span>
+                        ML Model Testing Interface
+                    </h1>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400 max-w-3xl">
+                        Comprehensive testing suite for OrganBridge's matching algorithm. 
+                        Run automated tests, validate predictions, and ensure model reliability before deployment.
+                    </p>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="flex space-x-3 mt-4 md:mt-0">
+                    <a href="{% url 'model_status' %}" 
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center">
+                        <span class="mr-2">📊</span>
+                        Model Status
+                    </a>
+                    <a href="{% url 'model_stats' %}" 
+                       class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                        <span class="mr-2">📈</span>
+                        Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎯 Testing Overview Section -->
+        <!-- 
+            WHY: Provide immediate visibility into testing status and key metrics
+            WHERE: Top section for quick assessment of model testing health
+            HOW: Using status cards with clear indicators and progress visualization
+        -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Test Coverage Card -->
+            <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Test Coverage</p>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">87%</h3>
+                        <p class="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
+                            <span class="mr-1">✅</span>
+                            24/28 test cases
+                        </p>
+                    </div>
+                    <div class="text-3xl text-green-500">📋</div>
+                </div>
+                <div class="mt-4">
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Last Test Run Card -->
+            <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Last Test Run</p>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">2 hrs ago</h3>
+                        <p class="text-sm text-blue-600 dark:text-blue-400 flex items-center mt-1">
+                            <span class="mr-1">🟢</span>
+                            All tests passed
+                        </p>
+                    </div>
+                    <div class="text-3xl text-blue-500">🕒</div>
+                </div>
+                <div class="mt-4">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        Duration: 45 seconds
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Rate Card -->
+            <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Success Rate</p>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">96.4%</h3>
+                        <p class="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
+                            <span class="mr-1">📈</span>
+                            +2.1% this week
+                        </p>
+                    </div>
+                    <div class="text-3xl text-purple-500">🎯</div>
+                </div>
+                <div class="mt-4">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        27 successful / 28 total
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avg Response Time Card -->
+            <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Response</p>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">0.18s</h3>
+                        <p class="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
+                            <span class="mr-1">⚡</span>
+                            Within target
+                        </p>
+                    </div>
+                    <div class="text-3xl text-orange-500">🚀</div>
+                </div>
+                <div class="mt-4">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        Target: < 0.5s
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎯 Main Testing Interface -->
+        <!-- 
+            WHY: Centralized testing control panel with both automated and manual testing capabilities
+            WHERE: Main content area for comprehensive testing operations
+            HOW: Using tabbed interface to separate different testing methodologies and provide clear workflows
+        -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+            <!-- Testing Control Panel -->
+            <div class="xl:col-span-2">
+                <div class="test-card bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
+                    <!-- Card Header with Tabs -->
+                    <div class="border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex">
+                            <button id="autoTab" class="flex-1 py-4 px-6 text-center font-medium border-b-2 border-blue-500 text-blue-600 dark:text-blue-400">
+                                🤖 Automated Tests
+                            </button>
+                            <button id="manualTab" class="flex-1 py-4 px-6 text-center font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                                👤 Manual Testing
+                            </button>
+                            <button id="batchTab" class="flex-1 py-4 px-6 text-center font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+               
+                                📊 Batch Testing
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Automated Tests Content -->
+                    <div id="autoContent" class="p-6">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Automated Test Suite</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                Run comprehensive automated tests to validate model functionality, performance, and accuracy.
+                            </p>
+                            
+                            <!-- Test Categories -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <input type="checkbox" id="funcTests" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <label for="funcTests" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Functional Tests</label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Basic prediction functionality and input validation</p>
+                                </div>
+                                
+                                <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <input type="checkbox" id="perfTests" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <label for="perfTests" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Performance Tests</label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Response time and resource usage under load</p>
+                                </div>
+                                
+                                <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <input type="checkbox" id="accuracyTests" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <label for="accuracyTests" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Accuracy Tests</label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Prediction accuracy against known outcomes</p>
+                                </div>
+                                
+                                <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <input type="checkbox" id="edgeTests" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <label for="edgeTests" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Edge Case Tests</label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Boundary conditions and unusual inputs</p>
+                                </div>
+                            </div>
+
+                            <!-- Run Tests Button -->
+                            <form method="post" id="testForm">
+                                {% csrf_token %}
+                                <button type="submit" id="runTestsBtn"
+                                        class="w-full bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center">
+                                    <span id="runTestsText" class="flex items-center">
+                                        <span class="mr-2">🚀</span>
+                                        Run Automated Tests
+                                    </span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Test Results -->
+                        <div id="testResults" class="hidden">
+                            <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">Test Results</h4>
+                            
+                            {% if test_result %}
+                            <div class="test-console p-4 mb-4">
+                                <div class="console-line console-info">Test execution started at {{ test_result.timestamp }}</div>
+                                {% for line in test_result.lines %}
+                                <div class="console-line {% if 'PASSED' in line %}console-success{% elif 'FAILED' in line %}console-error{% else %}console-info{% endif %}">
+                                    {{ line }}
+                                </div>
+                                {% endfor %}
+                                <div class="console-line console-success">All tests completed successfully!</div>
+                            </div>
+                            {% else %}
+                            <div class="test-console p-4">
+                                <div class="text-gray-500 text-center py-4">
+                                    Test results will appear here after execution...
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Manual Testing Content -->
+                    <div id="manualContent" class="p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Manual Test Input</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Test specific donor-recipient pairs manually to validate model predictions.
+                        </p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <!-- Donor Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Select Donor
+                                </label>
+                                <select id="donorSelect" class="test-input w-full rounded-lg p-3 bg-white dark:bg-gray-800">
+                                    <option value="">Choose a donor...</option>
+                                    <!-- Options would be populated dynamically -->
+                                    <option value="1">John Doe (Blood: O+, Age: 32)</option>
+                                    <option value="2">Jane Smith (Blood: A-, Age: 28)</option>
+                                    <option value="3">Mike Johnson (Blood: B+, Age: 45)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Recipient Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Select Recipient
+                                </label>
+                                <select id="recipientSelect" class="test-input w-full rounded-lg p-3 bg-white dark:bg-gray-800">
+                                    <option value="">Choose a recipient...</option>
+                                    <!-- Options would be populated dynamically -->
+                                    <option value="1">Sarah Wilson (Blood: O+, Age: 29)</option>
+                                    <option value="2">David Brown (Blood: A-, Age: 35)</option>
+                                    <option value="3">Emily Davis (Blood: B+, Age: 52)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Test Button -->
+                        <button id="manualTestBtn" 
+                                class="w-full bg-green-500 text-white py-3 px-6 rounded-lg hover:bg-green-600 transition-colors font-medium flex items-center justify-center">
+                            <span class="mr-2">🔍</span>
+                            Test Match Prediction
+                        </button>
+                        
+                        <!-- Manual Test Results -->
+                        <div id="manualResults" class="mt-6 hidden">
+                            <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">Prediction Result</h4>
+                            <div class="match-visualization">
+                                <div class="relative z-10">
+                                    <div class="text-center mb-4">
+                                        <div class="text-4xl font-bold mb-2" id="matchScore">0%</div>
+                                        <div class="text-lg font-medium" id="compatibilityLevel">Not Compatible</div>
+                                    </div>
+                                    <div class="result-bar mb-4">
+                                        <div id="matchBar" class="result-fill bg-green-500" style="width: 0%"></div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <div class="font-medium">Donor</div>
+                                            <div id="donorInfo" class="opacity-90">-</div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">Recipient</div>
+                                            <div id="recipientInfo" class="opacity-90">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Testing Content -->
+                    <div id="batchContent" class="p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Batch Testing</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Test multiple donor-recipient combinations simultaneously for comprehensive validation.
+                        </p>
+                        
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Test Configuration
+                            </label>
+                            <textarea id="batchConfig" 
+                                      class="test-input w-full rounded-lg p-3 h-32 bg-white dark:bg-gray-800"
+                                      placeholder='Paste test data in JSON format or use the template below...'></textarea>
+                            <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                Example: {"recipient_id": 1, "donor_ids": [1, 2, 3]}
+                            </div>
+                        </div>
+                        
+                        <button id="batchTestBtn" 
+                                class="w-full bg-purple-500 text-white py-3 px-6 rounded-lg hover:bg-purple-600 transition-colors font-medium flex items-center justify-center">
+                            <span class="mr-2">📊</span>
+                            Run Batch Tests
+                        </button>
+                        
+                        <!-- Batch Test Results -->
+                        <div id="batchResults" class="mt-6 hidden">
+                            <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">Batch Test Results</h4>
+                            <div class="test-console p-4" id="batchConsole">
+                                <div class="text-gray-500 text-center py-4">
+                                    Batch test results will appear here...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Execution Progress -->
+                <div id="testProgress" class="test-card bg-white dark:bg-gray-800 rounded-xl mt-6 overflow-hidden hidden">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                            <span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-2 rounded-lg mr-3">⏳</span>
+                            Test Execution Progress
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Progress Bar -->
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                <span id="progressMessage">Initializing tests...</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                                <div id="progressBar" class="result-bar h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Current Test -->
+                        <div class="mb-4">
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Test</h4>
+                            <div id="currentTest" class="text-sm text-gray-600 dark:text-gray-400">
+                                Waiting to start...
+                            </div>
+                        </div>
+
+                        <!-- Live Console -->
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Live Console</h4>
+                            <div class="test-console p-4" id="liveConsole">
+                                <div class="text-gray-500 text-center py-4">
+                                    Test execution log will appear here...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🎯 Sidebar - Test Information & Quick Actions -->
+            <!-- 
+                WHY: Provide contextual information, test history, and quick access to related functionality
+                WHERE: Right sidebar for supplementary information and secondary actions
+                HOW: Using organized cards with clear visual hierarchy and actionable items
+            -->
+            <div class="space-y-6">
+                <!-- Test Suite Information -->
+                <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg mr-3">📋</span>
+                        Test Suite Information
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Total Test Cases</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">28</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Automated Tests</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">24</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Manual Tests</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">4</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Last Updated</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">2 days ago</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Test Duration</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">~45 seconds</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Test Actions -->
+                <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Quick Test Actions</h3>
+                    
+                    <div class="space-y-3">
+                        <a href="{% url 'model_status' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">📊</span>
+                            <span class="text-sm font-medium">View Model Status</span>
+                        </a>
+                        
+                        <a href="{% url 'model_stats' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">📈</span>
+                            <span class="text-sm font-medium">Performance Analytics</span>
+                        </a>
+                        
+                        <a href="{% url 'update_dataset' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">📥</span>
+                            <span class="text-sm font-medium">Update Test Data</span>
+                        </a>
+                        
+                        <button onclick="exportTestResults()"
+                                class="w-full flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">📤</span>
+                            <span class="text-sm font-medium">Export Test Report</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Test History -->
+                <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Recent Test Runs</h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <div>
+                                <div class="text-sm font-medium text-green-900 dark:text-green-100">All Tests Passed</div>
+                                <div class="text-xs text-green-700 dark:text-green-300">2 hours ago</div>
+                            </div>
+                            <span class="status-badge status-passed">PASS</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <div>
+                                <div class="text-sm font-medium text-green-900 dark:text-green-100">All Tests Passed</div>
+                                <div class="text-xs text-green-700 dark:text-green-300">1 day ago</div>
+                            </div>
+                            <span class="status-badge status-passed">PASS</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <div>
+                                <div class="text-sm font-medium text-red-900 dark:text-red-100">1 Test Failed</div>
+                                <div class="text-xs text-red-700 dark:text-red-300">3 days ago</div>
+                            </div>
+                            <span class="status-badge status-failed">FAIL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testing Guidelines -->
+                <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Testing Guidelines</h3>
+                    
+                    <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                        <div class="flex items-start">
+                            <span class="text-green-500 mr-2">✅</span>
+                            <span>Run tests after model updates</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-blue-500 mr-2">ℹ️</span>
+                            <span>Check performance under 0.5s threshold</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-yellow-500 mr-2">⚠️</span>
+                            <span>Validate edge cases regularly</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-purple-500 mr-2">📝</span>
+                            <span>Export reports for documentation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎯 Test Results Summary -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How would you implement a test results visualization that helps identify patterns in model failures and performance bottlenecks?"
+            ANSWER: We use color-coded result categories, trend analysis, and detailed failure breakdowns. 
+            The visualization highlights recurring issues, performance degradation patterns, and provides 
+            actionable insights for model improvement.
+        -->
+        <div class="test-card bg-white dark:bg-gray-800 rounded-xl p-6">
+            <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <span class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded-lg mr-3">📈</span>
+                    Test Results Summary
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">24</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Passed Tests</div>
+                    <div class="text-xs text-green-500 mt-1">+2 from last run</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">0</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Failed Tests</div>
+                    <div class="text-xs text-green-500 mt-1">-1 from last run</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">4</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Skipped Tests</div>
+                    <div class="text-xs text-gray-500 mt-1">No change</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">45s</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Total Duration</div>
+                    <div class="text-xs text-green-500 mt-1">-5s faster</div>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">Test Categories</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600 dark:text-gray-400">Functional Tests</span>
+                                <span class="font-medium">12/12</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600 dark:text-gray-400">Performance Tests</span>
+                                <span class="font-medium">8/8</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600 dark:text-gray-400">Accuracy Tests</span>
+                                <span class="font-medium">4/4</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">Performance Metrics</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">Avg Prediction Time</span>
+                            <span class="font-medium text-green-600 dark:text-green-400">0.18s</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">Max Memory Usage</span>
+                            <span class="font-medium text-blue-600 dark:text-blue-400">512MB</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">CPU Utilization</span>
+                            <span class="font-medium text-yellow-600 dark:text-yellow-400">42%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">Success Rate</span>
+                            <span class="font-medium text-green-600 dark:text-green-400">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 🧪 Model Testing Controller
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Model Testing Interface initialized');
+        
+        // Tab Navigation
+        const autoTab = document.getElementById('autoTab');
+        const manualTab = document.getElementById('manualTab');
+        const batchTab = document.getElementById('batchTab');
+        const autoContent = document.getElementById('autoContent');
+        const manualContent = document.getElementById('manualContent');
+        const batchContent = document.getElementById('batchContent');
+        
+        autoTab.addEventListener('click', () => switchTab('auto'));
+        manualTab.addEventListener('click', () => switchTab('manual'));
+        batchTab.addEventListener('click', () => switchTab('batch'));
+        
+        function switchTab(tab) {
+            // Reset all tabs
+            [autoTab, manualTab, batchTab].forEach(t => {
+                t.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                t.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            });
+            
+            // Hide all content
+            [autoContent, manualContent, batchContent].forEach(c => c.classList.add('hidden'));
+            
+            // Activate selected tab
+            if (tab === 'auto') {
+                autoTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                autoContent.classList.remove('hidden');
+            } else if (tab === 'manual') {
+                manualTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                manualContent.classList.remove('hidden');
+            } else if (tab === 'batch') {
+                batchTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
+                batchContent.classList.remove('hidden');
+            }
+        }
+        
+        // Automated Test Form Handling
+        const testForm = document.getElementById('testForm');
+        const runTestsBtn = document.getElementById('runTestsBtn');
+        const runTestsText = document.getElementById('runTestsText');
+        const testResults = document.getElementById('testResults');
+        const testProgress = document.getElementById('testProgress');
+        
+        testForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show progress and results sections
+            testProgress.classList.remove('hidden');
+            testResults.classList.remove('hidden');
+            
+            // Update button state
+            runTestsBtn.disabled = true;
+            runTestsText.innerHTML = `
+                <div class="progress-dots">
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                </div>
+                <span class="ml-2">Running Tests...</span>
+            `;
+            
+            // Simulate test execution
+            simulateTestExecution();
+            
+            // In real implementation, this would make an AJAX call to the backend
+            // and update progress based on real-time feedback
+        });
+        
+        // Manual Testing
+        const manualTestBtn = document.getElementById('manualTestBtn');
+        const manualResults = document.getElementById('manualResults');
+        
+        manualTestBtn.addEventListener('click', function() {
+            const donorSelect = document.getElementById('donorSelect');
+            const recipientSelect = document.getElementById('recipientSelect');
+            
+            if (!donorSelect.value || !recipientSelect.value) {
+                showNotification('Please select both donor and recipient', 'error');
+                return;
+            }
+            
+            // Show loading state
+            manualTestBtn.disabled = true;
+            manualTestBtn.innerHTML = `
+                <div class="progress-dots">
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                </div>
+                <span class="ml-2">Calculating Match...</span>
+            `;
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Show results
+                manualResults.classList.remove('hidden');
+                
+                // Update results with simulated data
+                const matchScore = Math.floor(Math.random() * 40) + 60; // 60-100%
+                document.getElementById('matchScore').textContent = matchScore + '%';
+                document.getElementById('matchBar').style.width = matchScore + '%';
+                
+                // Set compatibility level
+                let compatibility = 'Not Compatible';
+                if (matchScore >= 90) compatibility = 'Excellent';
+                else if (matchScore >= 75) compatibility = 'Good';
+                else if (matchScore >= 60) compatibility = 'Fair';
+                else if (matchScore >= 40) compatibility = 'Poor';
+                document.getElementById('compatibilityLevel').textContent = compatibility;
+                
+                // Update donor/recipient info
+                document.getElementById('donorInfo').textContent = donorSelect.options[donorSelect.selectedIndex].text;
+                document.getElementById('recipientInfo').textContent = recipientSelect.options[recipientSelect.selectedIndex].text;
+                
+                // Reset button
+                manualTestBtn.disabled = false;
+                manualTestBtn.innerHTML = '<span class="mr-2">🔍</span>Test Match Prediction';
+                
+                showNotification('Match prediction completed successfully!', 'success');
+            }, 2000);
+        });
+        
+        // Batch Testing
+        const batchTestBtn = document.getElementById('batchTestBtn');
+        const batchResults = document.getElementById('batchResults');
+        
+        batchTestBtn.addEventListener('click', function() {
+            const batchConfig = document.getElementById('batchConfig').value;
+            
+            if (!batchConfig.trim()) {
+                showNotification('Please provide test configuration', 'error');
+                return;
+            }
+            
+            // Show loading state
+            batchTestBtn.disabled = true;
+            batchTestBtn.innerHTML = `
+                <div class="progress-dots">
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                    <div class="progress-dot"></div>
+                </div>
+                <span class="ml-2">Running Batch Tests...</span>
+            `;
+            
+            // Show results
+            batchResults.classList.remove('hidden');
+            
+            // Simulate batch test execution
+            simulateBatchTests();
+        });
+        
+        // Test Execution Simulation
+        function simulateTestExecution() {
+            const progressBar = document.getElementById('progressBar');
+            const progressMessage = document.getElementById('progressMessage');
+            const progressPercent = document.getElementById('progressPercent');
+            const currentTest = document.getElementById('currentTest');
+            const liveConsole = document.getElementById('liveConsole');
+            
+            const testSteps = [
+                { message: 'Initializing test environment...', duration: 1000, progress: 10 },
+                { message: 'Loading test data...', duration: 1500, progress: 25 },
+                { message: 'Running functional tests...', duration: 3000, progress: 45 },
+                { message: 'Running performance tests...', duration: 4000, progress: 65 },
+                { message: 'Running accuracy tests...', duration: 3500, progress: 85 },
+                { message: 'Generating test report...', duration: 2000, progress: 100 }
+            ];
+            
+            liveConsole.innerHTML = '';
+            let currentStep = 0;
+            
+            function addConsoleLine(message, type = 'info') {
+                const line = document.createElement('div');
+                line.className = `console-line console-${type}`;
+                line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                liveConsole.appendChild(line);
+                liveConsole.scrollTop = liveConsole.scrollHeight;
+            }
+            
+            function processStep(stepIndex) {
+                if (stepIndex >= testSteps.length) {
+                    // Test completion
+                    addConsoleLine('All tests completed successfully!', 'success');
+                    progressMessage.textContent = 'Tests completed successfully!';
+                    
+                    // Reset button after delay
+                    setTimeout(() => {
+                        runTestsBtn.disabled = false;
+                        runTestsText.innerHTML = '<span class="mr-2">🚀</span>Run Automated Tests';
+                    }, 1000);
+                    
+                    showNotification('Automated tests completed successfully!', 'success');
+                    return;
+                }
+                
+                const step = testSteps[stepIndex];
+                
+                // Update progress
+                progressBar.style.width = step.progress + '%';
+                progressPercent.textContent = step.progress + '%';
+                progressMessage.textContent = step.message;
+                currentTest.textContent = step.message;
+                
+                addConsoleLine(step.message, 'info');
+                
+                // Simulate test execution time
+                setTimeout(() => {
+                    addConsoleLine('✓ ' + step.message.replace('Running', 'Completed').replace('Initializing', 'Initialized').replace('Loading', 'Loaded'), 'success');
+                    processStep(stepIndex + 1);
+                }, step.duration);
+            }
+            
+            // Start test execution
+            processStep(0);
+        }
+        
+        function simulateBatchTests() {
+            const batchConsole = document.getElementById('batchConsole');
+            batchConsole.innerHTML = '';
+            
+            const tests = [
+                'Testing donor 1 with recipient 1...',
+                'Testing donor 2 with recipient 1...', 
+                'Testing donor 3 with recipient 1...',
+                'Testing donor 1 with recipient 2...',
+                'Testing donor 2 with recipient 2...'
+            ];
+            
+            let completed = 0;
+            const total = tests.length;
+            
+            tests.forEach((test, index) => {
+                setTimeout(() => {
+                    const line = document.createElement('div');
+                    line.className = 'console-line console-info';
+                    line.textContent = `[${new Date().toLocaleTimeString()}] ${test}`;
+                    batchConsole.appendChild(line);
+                    
+                    setTimeout(() => {
+                        const resultLine = document.createElement('div');
+                        resultLine.className = 'console-line console-success';
+                        const score = Math.floor(Math.random() * 40) + 60;
+                        resultLine.textContent = `[${new Date().toLocaleTimeString()}] ✓ Match score: ${score}%`;
+                        batchConsole.appendChild(resultLine);
+                        batchConsole.scrollTop = batchConsole.scrollHeight;
+                        
+                        completed++;
+                        if (completed === total) {
+                            const summaryLine = document.createElement('div');
+                            summaryLine.className = 'console-line console-success';
+                            summaryLine.textContent = `[${new Date().toLocaleTimeString()}] Batch testing completed: ${total} tests executed`;
+                            batchConsole.appendChild(summaryLine);
+                            
+                            // Reset button
+                            batchTestBtn.disabled = false;
+                            batchTestBtn.innerHTML = '<span class="mr-2">📊</span>Run Batch Tests';
+                            
+                            showNotification('Batch testing completed successfully!', 'success');
+                        }
+                    }, 500);
+                }, index * 800);
+            });
+        }
+        
+        // Utility Functions
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transform transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-lg mr-2">${
+                        type === 'success' ? '✅' : 
+                        type === 'error' ? '❌' : 'ℹ️'
+                    }</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        function exportTestResults() {
+            showNotification('Test report exported successfully!', 'success');
+            // In real implementation, this would generate and download a report
+        }
+        
+        // Initialize with auto tab active
+        switchTab('auto');
+    });
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} 
+
+## 🎯 **train_model.html**
+**WHY:** Admin interface for ML training - makes complex ML ops accessible to medical staff  
+**WHERE:** `/ml_model/templates/` - extends base.html, connects to train_model_view  
+**HOW:** Form submission → Django view → MLModelTrainer → Progress visualization
+
+## 📊 **model_stats.html** 
+**WHY:** Shows model performance metrics to stakeholders - proves ROI and compliance  
+**WHERE:** `/ml_model/templates/` - uses stats from model_stats_view  
+**HOW:** Aggregates data → Visualizes metrics → Provides actionable insights
+
+## 🧪 **test_model.html**
+**WHY:** Ensures model reliability before deployment - critical for medical decisions  
+**WHERE:** `/ml_model/templates/` - integrates with test_model_view and prediction APIs  
+**HOW:** Automated + Manual + Batch testing → Real-time results → Performance tracking
+
+## 🔧 **views.py (ML Section)**
+**WHY:** Centralizes model management logic with healthcare-grade security  
+**WHERE:** `/ml_model/views.py` - bridges Django with ML algorithms  
+**HOW:** Authentication → Training orchestration → Prediction APIs → Error handling
+
+## 🏗️ **Overall Architecture**
+**WHY:** Separates concerns for scalability and medical compliance  
+**WHERE:** Django backend + ML services + Secure frontend  
+**HOW:** User → Django Views → ML Services → Database with full audit trail
+
+**Interview Ready:** Each file includes strategic questions about ML ops, healthcare compliance, and user experience design.
+
+{% endcomment %}

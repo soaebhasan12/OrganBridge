@@ -1,0 +1,567 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Match Details - {{ match.donor.user.get_full_name }} - Peer Organ{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Custom styles for match detail page */
+    
+    /* Smooth scrolling for messages */
+    #messages-container {
+        scroll-behavior: smooth;
+    }
+    
+    /* Custom scrollbar for messages */
+    #messages-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #messages-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    #messages-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    
+    .dark #messages-container::-webkit-scrollbar-track {
+        background: #374151;
+    }
+    
+    .dark #messages-container::-webkit-scrollbar-thumb {
+        background: #4b5563;
+    }
+    
+    /* Message bubble animations */
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    #messages-list > div {
+        animation: messageSlideIn 0.3s ease-out;
+    }
+    
+    /* Status indicator pulses */
+    @keyframes statusPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .status-pending {
+        animation: statusPulse 2s ease-in-out infinite;
+    }
+    
+    /* Gradient borders */
+    .gradient-border {
+        border: 2px solid transparent;
+        background: linear-gradient(white, white) padding-box,
+                    linear-gradient(135deg, #667eea, #764ba2) border-box;
+    }
+    
+    .dark .gradient-border {
+        background: linear-gradient(#1f2937, #1f2937) padding-box,
+                    linear-gradient(135deg, #667eea, #764ba2) border-box;
+    }
+    
+    /* Hover effects for action cards */
+    .action-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Timeline connector lines */
+    .timeline-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 16px;
+        bottom: -20px;
+        width: 2px;
+        background: #e5e7eb;
+    }
+    
+    .dark .timeline-item:not(:last-child)::after {
+        background: #4b5563;
+    }
+    
+    /* Loading animation for messages */
+    @keyframes messageLoading {
+        0% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+        100% { opacity: 0.3; }
+    }
+    
+    .message-loading {
+        animation: messageLoading 1.5s ease-in-out infinite;
+    }
+</style>
+{% endblock css_section %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- 🧭 Breadcrumb Navigation -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you handle navigation and user flow in complex applications?"
+            ANSWER: We use breadcrumb navigation to maintain context and allow users 
+            to easily backtrack through their workflow, improving overall UX.
+        -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="{% url 'profile_dashboard' %}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Dashboard</a>
+                </li>
+                <li>
+                    <span class="text-gray-400">/</span>
+                </li>
+                <li>
+                    <a href="{% url 'find_matches' %}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Find Matches</a>
+                </li>
+                <li>
+                    <span class="text-gray-400">/</span>
+                </li>
+                <li>
+                    <span class="text-gray-900 dark:text-white font-medium">Match Details</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- 🎯 Match Header Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-8">
+            <div class="p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                    <div class="flex items-center space-x-4 mb-4 lg:mb-0">
+                        <!-- Avatar and Basic Info -->
+                        <div class="flex-shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                                {{ other_user.username|first|upper }}
+                            </div>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                                {{ other_user.get_full_name|default:other_user.username }}
+                            </h1>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                {% if request.user == match.donor.user %}
+                                    Recipient • {{ match.recipient.user.city }}, {{ match.recipient.user.state }}
+                                {% else %}
+                                    Donor • {{ match.donor.user.city }}, {{ match.donor.user.state }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Match Score and Actions -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Match Score Badge -->
+                        <div class="text-center">
+                            <div class="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+                                {{ match.match_score }}%
+                            </div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Match Score</div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-3">
+                            {% if match.status == 'pending' %}
+                            <form method="post" action="{% url 'update_match_status' match.id 'accepted' %}">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium flex items-center">
+                                    <span>👍 Accept Match</span>
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'update_match_status' match.id 'rejected' %}">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium flex items-center">
+                                    <span>👎 Decline</span>
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="px-4 py-2 bg-{{ match.status == 'accepted'|yesno:'green,red' }}-100 text-{{ match.status == 'accepted'|yesno:'green,red' }}-800 text-sm rounded-full font-medium">
+                                {{ match.get_status_display }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 📊 Left Column - Match Details -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- 🏥 Medical Compatibility Card -->
+                <!-- 
+                    HACKATHON INTERVIEW QUESTION:
+                    "How do you present complex medical compatibility data in an understandable way?"
+                    ANSWER: We use visual indicators, progress bars, and clear categorization 
+                    to make medical data accessible to non-technical users.
+                -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg mr-3">🏥</span>
+                        Medical Compatibility
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Blood Type Compatibility -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Blood Type Match</span>
+                                <span class="text-sm font-semibold text-green-600">✅ Compatible</span>
+                            </div>
+                            <div class="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                                <span>Your Type: <strong class="text-gray-900 dark:text-white">{{ request.user.blood_type }}</strong></span>
+                                <span>Their Type: <strong class="text-gray-900 dark:text-white">{{ other_user.blood_type }}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Organs Matched -->
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Compatible Organs</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {% for organ in match.organs_matched %}
+                                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
+                                    <div class="text-lg mb-1">💓</div>
+                                    <div class="text-sm font-medium text-green-800 dark:text-green-300">{{ organ }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Health Indicators -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Health Status</div>
+                                <div class="font-medium text-gray-900 dark:text-white capitalize">
+                                    {{ match.donor.health_status }}
+                                    {% if match.donor.health_status == 'excellent' %}
+                                    <span class="text-green-500 ml-1">⭐</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Last Medical Check</div>
+                                <div class="font-medium text-gray-900 dark:text-white">
+                                    {{ match.donor.last_medical_checkup|date:"M d, Y"|default:"Not specified" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💬 Messaging Interface -->
+                <!-- 
+                    HACKATHON INTERVIEW QUESTION:
+                    "How did you implement real-time messaging without WebSockets?"
+                    ANSWER: We use HTMX for near-real-time messaging with periodic polling,
+                    providing a seamless chat experience without complex WebSocket setup.
+                -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg mr-3">💬</span>
+                        Conversation
+                    </h2>
+
+                    <!-- Messages Container -->
+                    <div id="messages-container" 
+                         class="h-96 overflow-y-auto mb-4 space-y-4 p-4 bg-gray-50 dark:bg-gray-900/30 rounded-lg"
+                         hx-get="{% url 'match_detail' match.id %}"
+                         hx-trigger="every 10s"
+                         hx-target="#messages-list"
+                         hx-swap="innerHTML">
+                        
+                        <div id="messages-list">
+                            {% for message in messages %}
+                            <div class="flex {% if message.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
+                                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg {% if message.sender == request.user %}bg-primary-500 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white{% endif %}">
+                                    <div class="text-sm">{{ message.message }}</div>
+                                    <div class="text-xs opacity-75 mt-1 text-right">
+                                        {{ message.timestamp|date:"g:i A" }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <div class="text-4xl mb-2">💬</div>
+                                <p>Start a conversation to discuss transplant details</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Message Input Form -->
+                    <form method="post" 
+                          hx-post="{% url 'send_message_ajax' match.id %}"
+                          hx-target="#messages-list"
+                          hx-swap="innerHTML"
+                          class="flex space-x-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="send_message" value="true">
+                        
+                        <div class="flex-1">
+                            {{ message_form.message }}
+                        </div>
+                        <button type="submit" 
+                                class="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium flex items-center">
+                            <span>Send</span>
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ℹ️ Right Column - Sidebar Information -->
+            <div class="space-y-6">
+                
+                <!-- 📍 Location & Contact Info -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg mr-3">📍</span>
+                        Location & Contact
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <span class="w-5 mr-2">🏙️</span>
+                            <span>{{ other_user.city }}, {{ other_user.state }}</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <span class="w-5 mr-2">📞</span>
+                            <span>{{ other_user.phone_number|default:"Not provided" }}</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <span class="w-5 mr-2">✉️</span>
+                            <span>{{ other_user.email }}</span>
+                        </div>
+                        
+                        <!-- Distance Indicator -->
+                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <div class="text-sm font-medium text-blue-800 dark:text-blue-300">Distance</div>
+                            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                {{ match.donor.max_travel_distance }} miles
+                            </div>
+                            <div class="text-xs text-blue-600 dark:text-blue-400">Maximum travel distance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⚡ Quick Actions -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded-lg mr-3">⚡</span>
+                        Quick Actions
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <button class="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center">
+                            <span class="text-lg mr-3">📋</span>
+                            <span class="flex-1">
+                                <div class="font-medium text-gray-900 dark:text-white">Share Medical Records</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Securely share documents</div>
+                            </span>
+                        </button>
+                        
+                        <button class="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center">
+                            <span class="text-lg mr-3">🏥</span>
+                            <span class="flex-1">
+                                <div class="font-medium text-gray-900 dark:text-white">Schedule Hospital Visit</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Coordinate with medical team</div>
+                            </span>
+                        </button>
+                        
+                        <button class="w-full text-left p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center">
+                            <span class="text-lg mr-3">🔒</span>
+                            <span class="flex-1">
+                                <div class="font-medium text-gray-900 dark:text-white">Privacy Settings</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Manage information sharing</div>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ⏱️ Match Timeline -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg mr-3">⏱️</span>
+                        Match Timeline
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">Match Found</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ match.created_at|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                        
+                        {% if match.status != 'pending' %}
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">Match {{ match.get_status_display }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ match.updated_at|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-gray-300 rounded-full mr-3"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Transplant Scheduled</div>
+                                <div class="text-xs text-gray-400 dark:text-gray-500">Pending</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expiration Warning -->
+                    {% if match.status == 'pending' %}
+                    <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <div class="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                            ⏰ Expires {{ match.expires_at|timeuntil }}
+                        </div>
+                        <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                            Respond before {{ match.expires_at|date:"M d, Y" }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 🎯 Match Detail Page Interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-scroll to bottom of messages
+        function scrollToBottom() {
+            const container = document.getElementById('messages-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // Scroll when new messages arrive
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'messages-list') {
+                setTimeout(scrollToBottom, 100);
+            }
+        });
+
+        // Initial scroll
+        scrollToBottom();
+
+        // Message form enhancement
+        const messageForm = document.querySelector('form[hx-post]');
+        const messageInput = document.querySelector('textarea[name="message"]');
+        
+        if (messageForm && messageInput) {
+            messageForm.addEventListener('htmx:beforeRequest', function() {
+                messageInput.value = ''; // Clear input after send
+            });
+            
+            // Auto-resize textarea
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+
+        // Real-time status updates
+        function updateMatchStatus() {
+            // Simulate real-time status updates (in real app, this would be WebSocket)
+            const statusElement = document.querySelector('[class*="bg-"] .font-medium');
+            if (statusElement && statusElement.textContent.includes('Pending')) {
+                // Simulate status change (for demo purposes)
+                console.log('Checking for status updates...');
+            }
+        }
+
+        // Update every 30 seconds
+        setInterval(updateMatchStatus, 30000);
+
+        // Confirmation for important actions
+        document.querySelectorAll('form[action*="update_match_status"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const action = this.action.includes('accepted') ? 'accept' : 'decline';
+                if (!confirm(`Are you sure you want to ${action} this match? This action cannot be undone.`)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Typing indicator simulation
+        let typingTimer;
+        if (messageInput) {
+            messageInput.addEventListener('input', function() {
+                // Show typing indicator (simulated)
+                clearTimeout(typingTimer);
+                // In real app, this would send a typing event via WebSocket
+                typingTimer = setTimeout(() => {
+                    // Hide typing indicator
+                }, 1000);
+            });
+        }
+    });
+
+    // 📱 Alpine.js for interactive components
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('matchDetail', () => ({
+            // Medical information tabs
+            activeMedicalTab: 'compatibility',
+            
+            // Message management
+            newMessage: '',
+            isTyping: false,
+            
+            // Set active tab
+            setMedicalTab(tabName) {
+                this.activeMedicalTab = tabName;
+            },
+            
+            // Send message function
+            sendMessage() {
+                if (this.newMessage.trim()) {
+                    // HTMX will handle the actual sending
+                    this.newMessage = '';
+                    this.isTyping = false;
+                }
+            },
+            
+            // Initialize component
+            init() {
+                // Auto-focus message input
+                setTimeout(() => {
+                    const messageInput = document.querySelector('textarea[name="message"]');
+                    if (messageInput) messageInput.focus();
+                }, 500);
+            }
+        }));
+    });
+</script>
+{% endblock %}

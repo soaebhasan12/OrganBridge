@@ -1,0 +1,599 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Matching Preferences - Peer Organ{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Custom styles for preferences page */
+    
+    /* Custom slider styling */
+    .slider::-webkit-slider-thumb {
+        appearance: none;
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: #3b82f6;
+        cursor: pointer;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .slider::-moz-range-thumb {
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: #3b82f6;
+        cursor: pointer;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Toggle switch animations */
+    input:checked + label {
+        background-color: #3b82f6;
+    }
+    
+    input:checked + label span {
+        transform: translateX(1.5rem);
+    }
+    
+    /* Card hover effects */
+    .preference-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .preference-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Gradient backgrounds */
+    .quality-indicator {
+        background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+    }
+    
+    /* Save status animations */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .saving {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    /* Responsive grid adjustments */
+    @media (max-width: 768px) {
+        .preference-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Dark mode slider adjustments */
+    .dark .slider {
+        background: #374151;
+    }
+    
+    .dark .slider::-webkit-slider-thumb {
+        border-color: #1f2937;
+    }
+    
+    .dark .slider::-moz-range-thumb {
+        border-color: #1f2937;
+    }
+</style>
+{% endblock css_section %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- 🎯 Page Header -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you explain complex algorithm preferences to non-technical users?"
+            ANSWER: We use simple language, visual examples, and practical explanations
+            to make technical concepts accessible to all users.
+        -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Matching Preferences</h1>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">
+                Customize how we find the best matches for you. These settings help our AI algorithm prioritize what matters most to you.
+            </p>
+        </div>
+
+        <!-- 📊 Preferences Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Match Quality Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-xl">🎯</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Match Quality</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Minimum {{ form.min_match_score.value }}% score
+                    </p>
+                </div>
+            </div>
+
+            <!-- Distance Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-xl">📍</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Search Radius</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Up to {{ form.max_distance.value }} miles
+                    </p>
+                </div>
+            </div>
+
+            <!-- Notifications Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-xl">🔔</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {{ form.notify_new_matches.value|yesno:"Enabled,Disabled" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⚙️ Preferences Form -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you handle user preference persistence and real-time updates?"
+            ANSWER: We use Django forms with HTMX for real-time saving, providing
+            immediate feedback while maintaining data integrity.
+        -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <form method="post" 
+                  x-data="preferenceManager()"
+                  @input.debounce.500ms="savePreferences()"
+                  class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% csrf_token %}
+                
+                <!-- 🔒 Form Errors -->
+                {% if form.errors %}
+                <div class="p-6 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <span class="text-red-400 text-lg">⚠️</span>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800 dark:text-red-400">
+                                Please correct the errors below
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 🎯 Match Quality Section -->
+                <div class="p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-lg mr-3">🎯</span>
+                        Match Quality Settings
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Minimum Match Score -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="{{ form.min_match_score.id_for_label }}" 
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Minimum Match Score
+                                </label>
+                                <span class="text-lg font-bold text-primary-600" x-text="minMatchScore + '%'"></span>
+                            </div>
+                            
+                            <div class="mb-2">
+                                {% render_field form.min_match_score x-model="minMatchScore" 
+                                       class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                                       min="50" max="95" step="5" %}
+                            </div>
+                            
+                            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                                <span>50% (More matches)</span>
+                                <span>95% (Higher quality)</span>
+                            </div>
+                            
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                Higher scores show fewer but more compatible matches. 
+                                <span class="font-medium" x-text="getMatchQualityDescription(minMatchScore)"></span>
+                            </p>
+
+                            <!-- Quality Indicator -->
+                            <div class="mt-4">
+                                <div class="flex items-center justify-between text-sm mb-1">
+                                    <span class="text-gray-600 dark:text-gray-400">Match Quality</span>
+                                    <span class="font-medium" x-text="getMatchQualityLevel(minMatchScore)"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 h-2 rounded-full" 
+                                         :style="'width: ' + ((minMatchScore - 50) / 45 * 100) + '%'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 📍 Location Preferences -->
+                <div class="p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg mr-3">📍</span>
+                        Location Preferences
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Maximum Distance -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="{{ form.max_distance.id_for_label }}" 
+                                       class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Maximum Search Distance
+                                </label>
+                                <span class="text-lg font-bold text-primary-600" x-text="maxDistance + ' miles'"></span>
+                            </div>
+                            
+                            <div class="mb-2">
+                                {% render_field form.max_distance x-model="maxDistance"
+                                       class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                                       min="10" max="500" step="10" %}
+                            </div>
+                            
+                            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                                <span>10 miles (Local)</span>
+                                <span>500 miles (National)</span>
+                            </div>
+
+                            <!-- Distance Visualization -->
+                            <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Search Area Coverage</div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div class="bg-green-400 h-2 rounded-full" 
+                                             :style="'width: ' + Math.min(maxDistance / 5, 100) + '%'"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-500" x-text="getDistanceDescription(maxDistance)"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Priority -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Location Priority
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div class="relative">
+                                    <input type="radio" name="location_priority" value="local" class="sr-only" 
+                                           :checked="maxDistance <= 50" @change="maxDistance = 50">
+                                    <label class="flex flex-col p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-300 transition-colors"
+                                           :class="maxDistance <= 50 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : ''">
+                                        <span class="text-lg mb-2">🏙️</span>
+                                        <span class="font-medium text-sm">Local</span>
+                                        <span class="text-xs text-gray-500 mt-1">Within 50 miles</span>
+                                    </label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" name="location_priority" value="regional" class="sr-only"
+                                           :checked="maxDistance > 50 && maxDistance <= 200" @change="maxDistance = 200">
+                                    <label class="flex flex-col p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-300 transition-colors"
+                                           :class="maxDistance > 50 && maxDistance <= 200 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : ''">
+                                        <span class="text-lg mb-2">🗺️</span>
+                                        <span class="font-medium text-sm">Regional</span>
+                                        <span class="text-xs text-gray-500 mt-1">50-200 miles</span>
+                                    </label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" name="location_priority" value="national" class="sr-only"
+                                           :checked="maxDistance > 200" @change="maxDistance = 500">
+                                    <label class="flex flex-col p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-300 transition-colors"
+                                           :class="maxDistance > 200 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : ''">
+                                        <span class="text-lg mb-2">🌎</span>
+                                        <span class="font-medium text-sm">National</span>
+                                        <span class="text-xs text-gray-500 mt-1">200+ miles</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🔔 Notification Preferences -->
+                <div class="p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg mr-3">🔔</span>
+                        Notification Settings
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <!-- New Matches Notification -->
+                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                            <div>
+                                <label for="{{ form.notify_new_matches.id_for_label }}" 
+                                       class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                                    New Match Alerts
+                                </label>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    Get notified when new compatible donors are found
+                                </p>
+                            </div>
+                            <div class="relative inline-block w-12 h-6">
+                                {% render_field form.notify_new_matches class="sr-only" x-model="notifyNewMatches" %}
+                                <label :for="{{ form.notify_new_matches.id_for_label }}" 
+                                       class="block w-12 h-6 rounded-full cursor-pointer transition-colors"
+                                       :class="notifyNewMatches ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'">
+                                    <span class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"
+                                          :class="notifyNewMatches ? 'transform translate-x-6' : ''"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Message Notifications -->
+                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                            <div>
+                                <label for="{{ form.notify_messages.id_for_label }}" 
+                                       class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                                    Message Notifications
+                                </label>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    Receive alerts when you get new messages
+                                </p>
+                            </div>
+                            <div class="relative inline-block w-12 h-6">
+                                {% render_field form.notify_messages class="sr-only" x-model="notifyMessages" %}
+                                <label :for="{{ form.notify_messages.id_for_label }}" 
+                                       class="block w-12 h-6 rounded-full cursor-pointer transition-colors"
+                                       :class="notifyMessages ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'">
+                                    <span class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"
+                                          :class="notifyMessages ? 'transform translate-x-6' : ''"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💾 Form Actions -->
+                <div class="p-6 bg-gray-50 dark:bg-gray-900/50">
+                    <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                        <!-- Save Status Indicator -->
+                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <span class="w-2 h-2 rounded-full mr-2" 
+                                  :class="saveStatus === 'saved' ? 'bg-green-500' : saveStatus === 'saving' ? 'bg-yellow-500 animate-pulse' : 'bg-gray-400'"></span>
+                            <span x-text="getSaveStatusText()"></span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-3">
+                            <a href="{% url 'find_matches' %}" 
+                               class="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
+                                Back to Matches
+                            </a>
+                            <button type="submit"
+                                    class="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium flex items-center">
+                                <span>Save Preferences</span>
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- 💡 Preferences Tips -->
+        <!-- 
+            HACKATHON INTERVIEW QUESTION:
+            "How do you help users make informed decisions about complex preferences?"
+            ANSWER: We provide contextual tips and explanations that appear based on 
+            user selections, helping them understand the implications of their choices.
+        -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div class="flex items-start">
+                    <span class="text-blue-500 text-lg mr-3">💡</span>
+                    <div>
+                        <h4 class="font-medium text-blue-900 dark:text-blue-100">Quality vs Quantity</h4>
+                        <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                            Higher match scores (80%+) show fewer but more compatible matches. 
+                            Lower scores (60%+) show more options with varying compatibility.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div class="flex items-start">
+                    <span class="text-green-500 text-lg mr-3">🚗</span>
+                    <div>
+                        <h4 class="font-medium text-green-900 dark:text-green-100">Travel Considerations</h4>
+                        <p class="text-sm text-green-700 dark:text-green-300 mt-1">
+                            Larger search radii increase match possibilities but may involve 
+                            travel coordination. Consider your willingness to travel.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🤖 Algorithm Explanation -->
+        <div class="mt-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+            <div class="flex items-start">
+                <div class="flex-shrink-0 bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 mr-4">
+                    <span class="text-2xl">🤖</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        How Your Preferences Affect Matching
+                    </h3>
+                    <p class="text-gray-700 dark:text-gray-300 text-sm">
+                        Our AI algorithm uses your preferences to prioritize matches. Higher quality scores 
+                        focus on medical compatibility, while distance settings balance geographical 
+                        practicality with match availability.
+                    </p>
+                    <div class="mt-3 text-sm text-purple-600 dark:text-purple-400">
+                        <span class="font-medium">Pro Tip:</span> Start with broader settings, then refine as you see results.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 🎯 Preferences Management with Alpine.js
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('preferenceManager', () => ({
+            // Form data models
+            minMatchScore: {{ form.min_match_score.value }},
+            maxDistance: {{ form.max_distance.value }},
+            notifyNewMatches: {{ form.notify_new_matches.value|yesno:"true,false" }},
+            notifyMessages: {{ form.notify_messages.value|yesno:"true,false" }},
+            
+            // Save status tracking
+            saveStatus: 'saved', // 'saved', 'saving', 'unsaved'
+            saveTimer: null,
+            
+            // Initialize component
+            init() {
+                // Watch for changes to trigger auto-save
+                this.$watch('minMatchScore', () => this.debounceSave());
+                this.$watch('maxDistance', () => this.debounceSave());
+                this.$watch('notifyNewMatches', () => this.debounceSave());
+                this.$watch('notifyMessages', () => this.debounceSave());
+            },
+            
+            // Debounced save function
+            debounceSave() {
+                this.saveStatus = 'unsaved';
+                clearTimeout(this.saveTimer);
+                this.saveTimer = setTimeout(() => {
+                    this.savePreferences();
+                }, 1000);
+            },
+            
+            // Save preferences via HTMX
+            savePreferences() {
+                this.saveStatus = 'saving';
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('min_match_score', this.minMatchScore);
+                formData.append('max_distance', this.maxDistance);
+                formData.append('notify_new_matches', this.notifyNewMatches);
+                formData.append('notify_messages', this.notifyMessages);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                // HTMX request
+                htmx.ajax('POST', '{% url "match_preferences" %}', {
+                    values: {
+                        min_match_score: this.minMatchScore,
+                        max_distance: this.maxDistance,
+                        notify_new_matches: this.notifyNewMatches,
+                        notify_messages: this.notifyMessages
+                    },
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                }).then(() => {
+                    this.saveStatus = 'saved';
+                    // Show success message
+                    this.showToast('Preferences saved successfully!', 'success');
+                }).catch(() => {
+                    this.saveStatus = 'unsaved';
+                    this.showToast('Failed to save preferences', 'error');
+                });
+            },
+            
+            // Get descriptive text for match quality
+            getMatchQualityDescription(score) {
+                if (score >= 90) return 'Shows only the most compatible matches';
+                if (score >= 80) return 'Balances quality and quantity';
+                if (score >= 70) return 'Shows more matches with good compatibility';
+                return 'Shows all available matches';
+            },
+            
+            // Get match quality level
+            getMatchQualityLevel(score) {
+                if (score >= 90) return 'Excellent';
+                if (score >= 80) return 'Very Good';
+                if (score >= 70) return 'Good';
+                return 'Standard';
+            },
+            
+            // Get distance description
+            getDistanceDescription(distance) {
+                if (distance <= 50) return 'Local area';
+                if (distance <= 200) return 'Regional coverage';
+                return 'National search';
+            },
+            
+            // Get save status text
+            getSaveStatusText() {
+                switch(this.saveStatus) {
+                    case 'saved': return 'All changes saved';
+                    case 'saving': return 'Saving...';
+                    case 'unsaved': return 'Unsaved changes';
+                    default: return '';
+                }
+            },
+            
+            // Show toast notification
+            showToast(message, type) {
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transform transition-transform duration-300 ${
+                    type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                }`;
+                toast.textContent = message;
+                
+                document.body.appendChild(toast);
+                
+                // Remove toast after 3 seconds
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        }));
+    });
+
+    // 📱 Enhanced Slider Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Custom slider styling
+        const sliders = document.querySelectorAll('.slider');
+        sliders.forEach(slider => {
+            slider.addEventListener('input', function() {
+                const value = (this.value - this.min) / (this.max - this.min) * 100;
+                this.style.background = `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${value}%, #e5e7eb ${value}%, #e5e7eb 100%)`;
+            });
+            
+            // Trigger initial styling
+            slider.dispatchEvent(new Event('input'));
+        });
+
+        // Real-time preference preview
+        function updatePreferencePreview() {
+            const score = document.querySelector('[x-model="minMatchScore"]').value;
+            const distance = document.querySelector('[x-model="maxDistance"]').value;
+            
+            // Update preview cards
+            document.querySelector('[x-text="minMatchScore + \\'%\\'"]').textContent = score + '%';
+            document.querySelector('[x-text="maxDistance + \\' miles\\'"]').textContent = distance + ' miles';
+        }
+
+        // Initialize previews
+        updatePreferencePreview();
+    });
+</script>
+{% endblock %}

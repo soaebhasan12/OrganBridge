@@ -1,0 +1,668 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Train ML Model - OrganBridge{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Custom ML Training Dashboard Styles */
+    
+    /* Training Progress Animations */
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+    }
+    
+    .training-active {
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    /* Progress Bar Customization */
+    .progress-bar-gradient {
+        background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+    }
+    
+    /* Card Hover Effects */
+    .training-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #e5e7eb;
+    }
+    
+    .training-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Status Indicators */
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-ready { background-color: #10b981; }
+    .status-training { background-color: #f59e0b; }
+    .status-error { background-color: #ef4444; }
+    .status-complete { background-color: #3b82f6; }
+    
+    /* Console Log Styling */
+    .console-log {
+        font-family: 'Courier New', monospace;
+        background-color: #1f2937;
+        color: #d1d5db;
+        border-radius: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .log-entry {
+        padding: 4px 12px;
+        border-left: 3px solid transparent;
+    }
+    
+    .log-info { border-left-color: #3b82f6; }
+    .log-warning { border-left-color: #f59e0b; }
+    .log-error { border-left-color: #ef4444; }
+    .log-success { border-left-color: #10b981; }
+    
+    /* Dataset Visualization */
+    .dataset-stats {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+    }
+    
+    /* Responsive Grid */
+    @media (max-width: 1024px) {
+        .training-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Dark Mode Enhancements */
+    .dark .training-card {
+        border-color: #374151;
+        background: #1f2937;
+    }
+    
+    /* Button Animations */
+    .btn-training {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-training:after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: rotate(45deg);
+        transition: all 0.6s;
+        opacity: 0;
+    }
+    
+    .btn-training:hover:after {
+        opacity: 1;
+        transform: rotate(45deg) translate(10%, 10%);
+    }
+
+    /* Radio button selection styles */
+    input[type="radio"]:checked + label {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+    
+    .dark input[type="radio"]:checked + label {
+        border-color: #3b82f6;
+        background-color: #1e3a8a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- 🎯 Page Header Section -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-3 rounded-xl mr-4">🤖</span>
+                        ML Model Training Dashboard
+                    </h1>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400 max-w-3xl">
+                        Train and manage the machine learning model that powers OrganBridge's matching algorithm. 
+                        Monitor training progress, evaluate model performance, and deploy updates.
+                    </p>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="flex space-x-3 mt-4 md:mt-0">
+                    <a href="{% url 'model_status' %}" 
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center">
+                        <span class="mr-2">📊</span>
+                        Model Status
+                    </a>
+                    <a href="{% url 'model_stats' %}" 
+                       class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                        <span class="mr-2">📈</span>
+                        Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status Overview -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Model Status Card -->
+            <div class="training-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Model Status</p>
+                        <div class="flex items-center mt-1">
+                            <span class="status-indicator {% if model_exists %}status-ready{% else %}status-error{% endif %}"></span>
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
+                                {% if model_exists %}Trained{% else %}Not Trained{% endif %}
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="text-3xl">
+                        {% if model_exists %}✅{% else %}⚠️{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dataset Info Card -->
+            <div class="training-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Dataset</p>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mt-1">KidneyData.csv</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate" title="{{ dataset_path }}">
+                        {{ dataset_path|truncatechars:30 }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Training Time Card -->
+            <div class="training-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Est. Training Time</p>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">5-10 min</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Depending on system load</p>
+                </div>
+            </div>
+
+            <!-- Performance Card -->
+            <div class="training-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Last Accuracy</p>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">94.2%</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">On test dataset</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Training Interface -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <!-- Training Control Panel -->
+            <div class="xl:col-span-2">
+                <div class="training-card bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
+                    <!-- Card Header -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                            <span class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg mr-3">⚙️</span>
+                            Training Configuration
+                        </h2>
+                    </div>
+
+                    <!-- Training Form - FIXED: Removed Alpine.js and using standard form submission -->
+                    <form method="post" class="p-6 space-y-6" id="trainingForm">
+                        {% csrf_token %}
+                        
+                        <!-- Alert Messages -->
+                        {% if messages %}
+                        <div class="space-y-3">
+                            {% for message in messages %}
+                            <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800{% else %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800{% endif %}">
+                                <div class="flex items-center">
+                                    <span class="text-lg mr-3">{% if message.tags == 'error' %}❌{% else %}✅{% endif %}</span>
+                                    <span class="{% if message.tags == 'error' %}text-red-800 dark:text-red-400{% else %}text-green-800 dark:text-green-400{% endif %}">
+                                        {{ message }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Training Mode Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                Training Mode
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="relative">
+                                    <input type="radio" id="standard_mode" name="training_mode" value="standard" class="sr-only" checked>
+                                    <label for="standard_mode" class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="font-medium text-gray-900 dark:text-white">Standard Training</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                            Full dataset training with cross-validation
+                                        </span>
+                                        <ul class="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
+                                            <li>• 5-fold cross-validation</li>
+                                            <li>• Hyperparameter optimization</li>
+                                            <li>• Full dataset processing</li>
+                                        </ul>
+                                    </label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" id="quick_mode" name="training_mode" value="quick" class="sr-only">
+                                    <label for="quick_mode" class="flex flex-col p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                                        <span class="font-medium text-gray-900 dark:text-white">Quick Training</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                            Reduced dataset for faster iteration
+                                        </span>
+                                        <ul class="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
+                                            <li>• 70% dataset sample</li>
+                                            <li>• Basic validation</li>
+                                            <li>• Faster processing</li>
+                                        </ul>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Options -->
+                        <div>
+                            <button type="button" id="toggleAdvanced" 
+                                    class="flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mb-4">
+                                <span id="advancedArrow">▶</span>
+                                <span class="ml-2">Advanced Training Options</span>
+                            </button>
+                            
+                            <div id="advancedOptions" class="hidden space-y-4 pl-6 border-l-2 border-gray-200 dark:border-gray-700">
+                                <!-- Cross-Validation -->
+                                <div>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="cross_validation" checked 
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Enable Cross-Validation</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
+                                        5-fold cross-validation for robust model evaluation
+                                    </p>
+                                </div>
+
+                                <!-- Hyperparameter Tuning -->
+                                <div>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="hyperparameter_tuning" 
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Hyperparameter Tuning</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
+                                        Grid search for optimal parameters (increases training time)
+                                    </p>
+                                </div>
+
+                                <!-- Feature Selection -->
+                                <div>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="feature_selection" 
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Automatic Feature Selection</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
+                                        Select most relevant features automatically
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
+                            <button type="submit" id="trainButton"
+                                    class="btn-training flex-1 bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center">
+                                <span id="trainButtonText" class="flex items-center">
+                                    <span class="mr-2">🚀</span>
+                                    Start Model Training
+                                </span>
+                            </button>
+                            
+                            <a href="{% url 'retrain_model' %}" 
+                               class="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium flex items-center justify-center">
+                                <span class="mr-2">🔄</span>
+                                Retrain Model
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Training Progress Section - Will be shown via JavaScript -->
+                <div class="training-card bg-white dark:bg-gray-800 rounded-xl mt-6 overflow-hidden hidden"
+                     id="progressSection">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                            <span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 p-2 rounded-lg mr-3">📈</span>
+                            Training Progress
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Progress Bar -->
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                <span id="progressMessage">Initializing...</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                                <div id="progressBar" class="progress-bar-gradient h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Steps -->
+                        <div class="grid grid-cols-5 gap-2 mb-6" id="progressSteps">
+                            <!-- Steps will be populated by JavaScript -->
+                        </div>
+
+                        <!-- Training Log -->
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Training Log</h4>
+                            <div class="console-log p-4" id="trainingLog">
+                                <div class="text-gray-500 text-center py-4">
+                                    Training log will appear here...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar - Model Information & Quick Actions -->
+            <div class="space-y-6">
+                <!-- Model Specifications -->
+                <div class="training-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-2 rounded-lg mr-3">🔧</span>
+                        Model Specifications
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Algorithm</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">Random Forest</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Features</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">15+ Parameters</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Target</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">Match Probability</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Dataset Size</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">10,000+ Records</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Last Updated</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">2 days ago</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="training-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+                    
+                    <div class="space-y-3">
+                        <a href="{% url 'predict_match' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">🔍</span>
+                            <span class="text-sm font-medium">Test Prediction</span>
+                        </a>
+                        
+                        <a href="{% url 'update_dataset' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">📥</span>
+                            <span class="text-sm font-medium">Update Dataset</span>
+                        </a>
+                        
+                        <a href="{% url 'test_model' %}" 
+                           class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <span class="text-lg mr-3">🧪</span>
+                            <span class="text-sm font-medium">Model Testing</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- System Requirements -->
+                <div class="training-card bg-white dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">System Requirements</h3>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Memory</span>
+                            <span class="font-medium">≥ 4GB RAM</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Storage</span>
+                            <span class="font-medium">≥ 1GB Free</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Processing</span>
+                            <span class="font-medium">Multi-core CPU</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                        <p class="text-xs text-yellow-800 dark:text-yellow-400">
+                            <span class="font-medium">Note:</span> Training may be slower on resource-constrained systems.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Educational Section -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+                <div class="flex items-start">
+                    <span class="text-blue-500 text-2xl mr-4">🤔</span>
+                    <div>
+                        <h4 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">How Model Training Works</h4>
+                        <p class="text-sm text-blue-700 dark:text-blue-300">
+                            The system analyzes historical organ transplant data to learn patterns of successful matches. 
+                            It creates a predictive model that can evaluate new donor-recipient pairs with high accuracy.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+                <div class="flex items-start">
+                    <span class="text-green-500 text-2xl mr-4">💡</span>
+                    <div>
+                        <h4 class="font-semibold text-green-900 dark:text-green-100 mb-2">Training Best Practices</h4>
+                        <p class="text-sm text-green-700 dark:text-green-300">
+                            Regular retraining with new data improves accuracy. Monitor performance metrics and 
+                            retrain when accuracy drops below 90% or when significant new data becomes available.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Advanced options toggle
+        const toggleAdvanced = document.getElementById('toggleAdvanced');
+        const advancedOptions = document.getElementById('advancedOptions');
+        const advancedArrow = document.getElementById('advancedArrow');
+        
+        toggleAdvanced.addEventListener('click', function() {
+            advancedOptions.classList.toggle('hidden');
+            advancedArrow.textContent = advancedOptions.classList.contains('hidden') ? '▶' : '▼';
+        });
+
+        // Form submission handling
+        const trainingForm = document.getElementById('trainingForm');
+        const trainButton = document.getElementById('trainButton');
+        const trainButtonText = document.getElementById('trainButtonText');
+        const progressSection = document.getElementById('progressSection');
+        
+        trainingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show progress section
+            progressSection.classList.remove('hidden');
+            
+            // Disable button and show loading state
+            trainButton.disabled = true;
+            trainButtonText.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Training in Progress...';
+            
+            // Start progress simulation
+            simulateTrainingProgress();
+            
+            // Submit the form after a delay to show the progress
+            setTimeout(() => {
+                trainingForm.submit();
+            }, 13000); // Match the total duration of simulation
+        });
+
+        // Training progress simulation
+        function simulateTrainingProgress() {
+            const steps = [
+                { name: 'Data Load', message: 'Loading dataset...', duration: 2000, progress: 20 },
+                { name: 'Preprocess', message: 'Preprocessing data...', duration: 3000, progress: 40 },
+                { name: 'Train', message: 'Training model...', duration: 5000, progress: 70 },
+                { name: 'Validate', message: 'Validating model...', duration: 2000, progress: 90 },
+                { name: 'Save', message: 'Saving model...', duration: 1000, progress: 100 }
+            ];
+            
+            const progressBar = document.getElementById('progressBar');
+            const progressMessage = document.getElementById('progressMessage');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressSteps = document.getElementById('progressSteps');
+            const trainingLog = document.getElementById('trainingLog');
+            
+            // Initialize progress steps
+            progressSteps.innerHTML = steps.map((step, index) => `
+                <div class="text-center">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 text-white text-sm bg-gray-300 dark:bg-gray-600 step-${index}">
+                        ${index + 1}
+                    </div>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">${step.name}</span>
+                </div>
+            `).join('');
+            
+            trainingLog.innerHTML = '';
+            let logCounter = 0;
+            
+            function addLog(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.innerHTML = `
+                    <span class="text-gray-400">[</span>
+                    <span class="text-purple-400">${timestamp}</span>
+                    <span class="text-gray-400">]</span>
+                    <span class="ml-2">${message}</span>
+                `;
+                trainingLog.appendChild(logEntry);
+                trainingLog.scrollTop = trainingLog.scrollHeight;
+                logCounter++;
+            }
+            
+            addLog('Starting model training process...', 'info');
+            
+            let currentStep = 0;
+            
+            function processStep(stepIndex) {
+                if (stepIndex >= steps.length) {
+                    addLog('Model training completed successfully!', 'success');
+                    showNotification('Model trained successfully!', 'success');
+                    return;
+                }
+                
+                const step = steps[stepIndex];
+                
+                // Update current step
+                document.querySelector(`.step-${stepIndex}`).classList.remove('bg-gray-300', 'dark:bg-gray-600');
+                document.querySelector(`.step-${stepIndex}`).classList.add('bg-blue-500');
+                
+                progressMessage.textContent = step.message;
+                progressPercent.textContent = step.progress + '%';
+                progressBar.style.width = step.progress + '%';
+                
+                addLog(step.message, 'info');
+                
+                setTimeout(() => {
+                    // Mark step as completed
+                    document.querySelector(`.step-${stepIndex}`).classList.remove('bg-blue-500');
+                    document.querySelector(`.step-${stepIndex}`).classList.add('bg-green-500');
+                    document.querySelector(`.step-${stepIndex}`).innerHTML = '✓';
+                    
+                    // Process next step
+                    processStep(stepIndex + 1);
+                }, step.duration);
+            }
+            
+            // Start processing steps
+            processStep(0);
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transform transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-lg mr-2">${type === 'success' ? '✅' : 'ℹ️'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Radio button selection styling
+        const radioButtons = document.querySelectorAll('input[type="radio"]');
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove selected styling from all labels
+                document.querySelectorAll('input[type="radio"] + label').forEach(label => {
+                    label.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                });
+                
+                // Add selected styling to current label
+                if (this.checked) {
+                    const label = this.nextElementSibling;
+                    label.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                }
+            });
+            
+            // Initialize selected state
+            if (radio.checked) {
+                const label = radio.nextElementSibling;
+                label.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+            }
+        });
+    });
+</script>
+{% endblock %}
