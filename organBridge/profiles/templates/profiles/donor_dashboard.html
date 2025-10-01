@@ -1,9 +1,4 @@
 <!-- [file name]: donor_dashboard.html -->
-<!-- 
-WHY: This page provides donors with a comprehensive dashboard to manage their profile and organ donation status
-WHERE: Accessed by donors after login to view their profile, statistics, and manage availability
-HOW: Uses Django template engine with Tailwind CSS for responsive design and Alpine.js for interactive elements
--->
 {% extends 'base.html' %}
 {% load static %}
 
@@ -38,27 +33,10 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
     .organ-heart { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
     .organ-lungs { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
     .organ-pancreas { background: #f3e8ff; color: #7c3aed; border: 1px solid #e9d5ff; }
-    
-    /* Stats Cards Animation */
-    @keyframes stat-pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-    }
-    
-    .stat-card:hover {
-        animation: stat-pulse 2s ease-in-out infinite;
-    }
-    
-    /* Quick Actions Grid */
-    .action-card {
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent;
-    }
-    
-    .action-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    }
+    .organ-intestine { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+    .organ-cornea { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
+    .organ-skin { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .organ-bone { background: #faf5ff; color: #7c3aed; border: 1px solid #e9d5ff; }
     
     /* Health Status Indicator */
     .health-indicator {
@@ -81,12 +59,6 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <!-- 🎯 Page Header Section -->
-        <!-- 
-            HACKATHON INTERVIEW QUESTION:
-            "How do you ensure donor data privacy while providing meaningful dashboard insights?"
-            ANSWER: We implement role-based access control, anonymize sensitive data in public views,
-            and provide donors with clear visibility into what information is shared during matching.
-        -->
         <div class="mb-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
                 <div>
@@ -119,7 +91,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
         <!-- 📊 Dashboard Statistics -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Organs Donating -->
-            <div class="stat-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Organs Donating</p>
@@ -135,7 +107,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
             </div>
 
             <!-- Profile Completeness -->
-            <div class="stat-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Profile Complete</p>
@@ -151,7 +123,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
             </div>
 
             <!-- Health Status -->
-            <div class="stat-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Health Status</p>
@@ -173,7 +145,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
             </div>
 
             <!-- Last Updated -->
-            <div class="stat-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Last Updated</p>
@@ -236,41 +208,55 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
                                 <div class="flex justify-between">
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Smoking Status</span>
                                     <span class="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                        {{ donor.smoking_status|yesno:"Smoker,Non-smoker" }}
+                                        {{ donor.smoking_status }}
                                     </span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Drug Use</span>
-                                    <span class="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                        {{ donor.drug_use|yesno:"User,Non-user" }}
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ donor.drug_use|yesno:"Yes,No" }}
                                     </span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Alcohol Use</span>
                                     <span class="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                        {{ donor.alcohol_use|yesno:"User,Non-user" }}
+                                        {{ donor.alcohol_use }}
                                     </span>
                                 </div>
                             </div>
                             <div class="space-y-3">
+                                {% if donor.height %}
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Average Sleep</span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">Height</span>
                                     <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ donor.avg_sleep }} hours
+                                        {{ donor.height }} cm
                                     </span>
                                 </div>
+                                {% endif %}
+                                {% if donor.weight %}
                                 <div class="flex justify-between">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Blood Type</span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">Weight</span>
                                     <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ donor.user.blood_type }}
+                                        {{ donor.weight }} kg
                                     </span>
                                 </div>
+                                {% endif %}
+                                {% if donor.bmi %}
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">BMI</span>
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ donor.bmi }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                                {% if donor.last_medical_checkup %}
                                 <div class="flex justify-between">
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Last Medical Check</span>
                                     <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ donor.last_medical_check|default:"Not specified" }}
+                                        {{ donor.last_medical_checkup|date:"M d, Y" }}
                                     </span>
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -288,7 +274,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <a href="{% url 'profiles:edit_profile' %}" 
-                               class="action-card bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                               class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                                 <div class="flex items-center">
                                     <span class="text-2xl text-blue-600 dark:text-blue-400 mr-3">✏️</span>
                                     <div>
@@ -299,7 +285,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
                             </a>
                             
                             <a href="{% url 'matches:find_matches' %}" 
-                               class="action-card bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                               class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
                                 <div class="flex items-center">
                                     <span class="text-2xl text-green-600 dark:text-green-400 mr-3">🔍</span>
                                     <div>
@@ -310,7 +296,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
                             </a>
                             
                             <a href="{% url 'profiles:public_profile' user_id=request.user.id %}" 
-                               class="action-card bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                               class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
                                 <div class="flex items-center">
                                     <span class="text-2xl text-purple-600 dark:text-purple-400 mr-3">👁️</span>
                                     <div>
@@ -321,7 +307,7 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
                             </a>
                             
                             <a href="#" 
-                               class="action-card bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors">
+                               class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors">
                                 <div class="flex items-center">
                                     <span class="text-2xl text-yellow-600 dark:text-yellow-400 mr-3">📊</span>
                                     <div>
@@ -347,16 +333,20 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Name</span>
-                            <span class="font-medium text-gray-900 dark:text-white">{{ donor.user.get_full_name }}</span>
+                            <span class="font-medium text-gray-900 dark:text-white">{{ donor.user.get_full_name|default:donor.user.username }}</span>
                         </div>
+                        {% if donor.user.city %}
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Location</span>
                             <span class="font-medium text-gray-900 dark:text-white">{{ donor.user.city }}</span>
                         </div>
+                        {% endif %}
+                        {% if donor.user.age %}
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Age</span>
                             <span class="font-medium text-gray-900 dark:text-white">{{ donor.user.age }}</span>
                         </div>
+                        {% endif %}
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Member Since</span>
                             <span class="font-medium text-gray-900 dark:text-white">{{ donor.user.date_joined|date:"M Y" }}</span>
@@ -422,39 +412,41 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
         const availabilityToggle = document.getElementById('availability_toggle');
         const availabilityStatus = document.getElementById('availability_status');
         
-        availabilityToggle.addEventListener('change', function() {
-            const isAvailable = this.checked;
-            
-            // AJAX request to update availability
-            fetch("{% url 'profiles:toggle_availability' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    availabilityStatus.textContent = data.is_available ? 'Available' : 'Unavailable';
-                    availabilityStatus.className = `text-sm font-medium ${data.is_available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`;
-                    
-                    // Show success message
-                    showNotification('Availability updated successfully!', 'success');
-                } else {
-                    showNotification('Failed to update availability', 'error');
-                    // Revert toggle state
+        if (availabilityToggle) {
+            availabilityToggle.addEventListener('change', function() {
+                const isAvailable = this.checked;
+                
+                // AJAX request to update availability
+                fetch("{% url 'profiles:toggle_availability' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        availabilityStatus.textContent = data.is_available ? 'Available' : 'Unavailable';
+                        availabilityStatus.className = `text-sm font-medium ${data.is_available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`;
+                        
+                        // Show success message
+                        showNotification('Availability updated successfully!', 'success');
+                    } else {
+                        showNotification('Failed to update availability', 'error');
+                        // Revert toggle state
+                        availabilityToggle.checked = !isAvailable;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Network error occurred', 'error');
                     availabilityToggle.checked = !isAvailable;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('Network error occurred', 'error');
-                availabilityToggle.checked = !isAvailable;
+                });
             });
-        });
+        }
 
         // Notification function
         function showNotification(message, type) {
@@ -470,20 +462,6 @@ HOW: Uses Django template engine with Tailwind CSS for responsive design and Alp
                 notification.remove();
             }, 3000);
         }
-
-        // Add hover effects to stat cards
-        const statCards = document.querySelectorAll('.stat-card');
-        statCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-4px)';
-                this.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '';
-            });
-        });
     });
 </script>
 {% endblock %}

@@ -13,9 +13,6 @@ from .forms import MatchPreferenceForm, MessageForm
 def find_matches(request):
     """
     Find matches for recipient using ML algorithm
-    WHY: Recipient ko compatible donors dhundne ke liye
-    WHERE: Recipient dashboard se call hoga
-    HOW: ML matching engine use karke best donors find karega
     """
     if not request.user.is_recipient():
         messages.error(request, 'Only recipients can search for matches.')
@@ -39,12 +36,25 @@ def find_matches(request):
         matching_engine = OrganMatchingEngine()
         matches_data = matching_engine.find_matches(recipient, donors, top_n=10)
         
-        # Format matches for template
+        # Format matches for template - FIXED: Create OrganMatch objects or pass proper data
         formatted_matches = []
         for match_data in matches_data:
+            # Check if OrganMatch already exists, if not create one
+            organ_match, created = OrganMatch.objects.get_or_create(
+                donor=match_data['donor'],
+                recipient=recipient,
+                defaults={
+                    'match_score': match_data['final_score'],
+                    'organs_matched': match_data['compatibility_details']['organs_matched'],
+                    'expires_at': timezone.now() + timedelta(days=30),
+                    'status': 'pending'
+                }
+            )
+            
             formatted_matches.append({
+                'match_id': organ_match.id,  # FIXED: Add match_id for URL generation
                 'donor': match_data['donor'],
-                'match_score': match_data['final_score'],  # FIXED: Changed from 'score' to 'final_score'
+                'match_score': match_data['final_score'],
                 'ml_score': match_data['ml_score'],
                 'compatibility': get_compatibility_level(match_data['final_score']),
                 'blood_compatible': match_data['compatibility_details']['blood_match'],
@@ -63,7 +73,6 @@ def find_matches(request):
     except Exception as e:
         messages.error(request, f'Error finding matches: {str(e)}')
         return redirect('profiles:recipient_dashboard')
-
 
 # Utility Function
 def get_compatibility_level(score):
@@ -186,21 +195,21 @@ def send_message_ajax(request, match_id):
         if request.user not in [match.donor.user, match.recipient.user]:
             return JsonResponse({'error': 'Permission denied'}, status=403)
         
-        message_form = MessageForm(request.POST)
-        if message_form.is_valid():
-            new_message = message_form.save(commit=False)
-            new_message.match = match
-            new_message.sender = request.user
-            new_message.save()
+        message_text = request.POST.get('message', '').strip()
+        if message_text:
+            new_message = MatchMessage.objects.create(
+                match=match,
+                sender=request.user,
+                message=message_text
+            )
             
-            return JsonResponse({
-                'success': True,
-                'message': new_message.message,
-                'sender': new_message.sender.username,
-                'timestamp': new_message.timestamp.strftime('%Y-%m-%d %H:%M')
+            # Return updated messages list HTML
+            messages_list = MatchMessage.objects.filter(match=match)
+            return render(request, 'matches/_messages_list.html', {
+                'messages': messages_list
             })
         else:
-            return JsonResponse({'error': 'Invalid message'}, status=400)
+            return JsonResponse({'error': 'Empty message'}, status=400)
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 

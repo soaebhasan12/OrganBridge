@@ -1,0 +1,15 @@
+{% for message in messages %}
+<div class="flex {% if message.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
+    <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg {% if message.sender == request.user %}bg-primary-500 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white{% endif %}">
+        <div class="text-sm">{{ message.message }}</div>
+        <div class="text-xs opacity-75 mt-1 text-right">
+            {{ message.timestamp|date:"g:i A" }}
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="text-center text-gray-500 dark:text-gray-400 py-8">
+    <div class="text-4xl mb-2">💬</div>
+    <p>Start a conversation to discuss transplant details</p>
+</div>
+{% endfor %}

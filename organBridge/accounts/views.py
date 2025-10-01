@@ -60,7 +60,7 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     messages.info(request, 'You have been logged out successfully.')
-    return redirect('login')
+    return redirect('accounts:login')
 
 @login_required
 def account_view(request):
@@ -68,7 +68,7 @@ def account_view(request):
     return render(request, 'accounts/account.html', {'user': user})
 
 @login_required
-def edit_account(request):
+def udpate_account(request):
     if request.method == 'POST':
         form = CustomUserChangeForm(request.POST, instance=request.user)
         if form.is_valid():

@@ -125,13 +125,13 @@
         <nav class="flex mb-8" aria-label="Breadcrumb">
             <ol class="flex items-center space-x-2">
                 <li>
-                    <a href="{% url 'profile_dashboard' %}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Dashboard</a>
+                    <a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Dashboard</a>
                 </li>
                 <li>
                     <span class="text-gray-400">/</span>
                 </li>
                 <li>
-                    <a href="{% url 'find_matches' %}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Find Matches</a>
+                    <a href="{% url 'matches:find_matches' %}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Find Matches</a>
                 </li>
                 <li>
                     <span class="text-gray-400">/</span>
@@ -195,9 +195,14 @@
                                 </button>
                             </form>
                             {% else %}
-                            <span class="px-4 py-2 bg-{{ match.status == 'accepted'|yesno:'green,red' }}-100 text-{{ match.status == 'accepted'|yesno:'green,red' }}-800 text-sm rounded-full font-medium">
-                                {{ match.get_status_display }}
-                            </span>
+                                <span class="px-4 py-2 
+                                    {% if match.status == 'accepted' %}bg-green-100 text-green-800
+                                    {% elif match.status == 'rejected' %}bg-red-100 text-red-800
+                                    {% elif match.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}
+                                    text-sm rounded-full font-medium">
+                                    {{ match.get_status_display }}
+                                </span>
                             {% endif %}
                         </div>
                     </div>
@@ -282,21 +287,26 @@
                         Conversation
                     </h2>
 
-                    <!-- Messages Container -->
+                    <!-- Messages Container with Polling -->
                     <div id="messages-container" 
-                         class="h-96 overflow-y-auto mb-4 space-y-4 p-4 bg-gray-50 dark:bg-gray-900/30 rounded-lg"
-                         hx-get="{% url 'match_detail' match.id %}"
-                         hx-trigger="every 10s"
-                         hx-target="#messages-list"
-                         hx-swap="innerHTML">
+                        class="h-96 overflow-y-auto mb-4 space-y-4 p-4 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
                         
-                        <div id="messages-list">
+                        <!-- Messages List (will be updated by HTMX) -->
+                        <div id="messages-list" 
+                            hx-get="{% url 'matches:match_detail' match.id %} #messages-list"
+                            hx-trigger="every 5s"
+                            hx-target="this"
+                            hx-swap="innerHTML">
+                            
                             {% for message in messages %}
                             <div class="flex {% if message.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
                                 <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg {% if message.sender == request.user %}bg-primary-500 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white{% endif %}">
                                     <div class="text-sm">{{ message.message }}</div>
                                     <div class="text-xs opacity-75 mt-1 text-right">
                                         {{ message.timestamp|date:"g:i A" }}
+                                        {% if message.sender == request.user %}
+                                            {% if message.is_read %}✓✓{% else %}✓{% endif %}
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -311,18 +321,22 @@
 
                     <!-- Message Input Form -->
                     <form method="post" 
-                          hx-post="{% url 'send_message_ajax' match.id %}"
-                          hx-target="#messages-list"
-                          hx-swap="innerHTML"
-                          class="flex space-x-3">
+                        hx-post="{% url 'matches:send_message_ajax' match.id %}"
+                        hx-target="#messages-list"
+                        hx-swap="innerHTML"
+                        hx-on::after-request="this.reset()"
+                        class="flex space-x-3">
                         {% csrf_token %}
-                        <input type="hidden" name="send_message" value="true">
                         
                         <div class="flex-1">
-                            {{ message_form.message }}
+                            <textarea name="message" 
+                                    class="form-control w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                    rows="3"
+                                    placeholder="Type your message here..."
+                                    required></textarea>
                         </div>
                         <button type="submit" 
-                                class="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium flex items-center">
+                                class="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium flex items-center h-fit">
                             <span>Send</span>
                             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
@@ -330,6 +344,8 @@
                         </button>
                     </form>
                 </div>
+
+
             </div>
 
             <!-- ℹ️ Right Column - Sidebar Information -->
@@ -452,7 +468,7 @@
         </div>
     </div>
 </div>
-{% endblock %}
+
 
 {% block extra_js %}
 <script>
@@ -563,5 +579,56 @@
             }
         }));
     });
+
+
+
+    // Enhanced messaging functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const messagesContainer = document.getElementById('messages-container');
+        const messageForm = document.querySelector('form[hx-post]');
+        const messageInput = document.querySelector('textarea[name="message"]');
+
+        // Auto-scroll to bottom
+        function scrollToBottom() {
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+
+        // Scroll when new content loads
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'messages-list') {
+                setTimeout(scrollToBottom, 100);
+            }
+        });
+
+        // Auto-resize textarea
+        if (messageInput) {
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            // Enter key to submit (with shift for new line)
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (messageForm && this.value.trim()) {
+                        messageForm.requestSubmit();
+                    }
+                }
+            });
+        }
+
+        // Initial scroll
+        scrollToBottom();
+
+        // Focus message input
+        if (messageInput) {
+            setTimeout(() => messageInput.focus(), 500);
+        }
+    });
 </script>
+{% endblock %}
+
 {% endblock %}

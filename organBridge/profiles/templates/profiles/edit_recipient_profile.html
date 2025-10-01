@@ -304,22 +304,22 @@ HOW: Uses Django forms with pre-populated recipient data, Tailwind CSS for respo
                         Organs Needed *
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="organsGrid">
-                        {% for organ in form.organs_needed.field.choices %}
-                        {% if organ.0 %}
-                        <div class="organ-option {% if organ.0 in form.organs_needed.value %}selected{% endif %}" 
-                             data-organ="{{ organ.0 }}">
+                        {% for organ_value, organ_label in form.organs_needed.field.choices %}
+                        {% if organ_value %}
+                        <div class="organ-option {% if organ_value in form.organs_needed.value or organ_value|stringformat:'s' in form.organs_needed.value %}selected{% endif %}" 
+                             data-organ="{{ organ_value }}">
                             <div class="text-3xl mb-2">
-                                {% if organ.0 == 'kidney' %}🫀
-                                {% elif organ.0 == 'liver' %}🍖
-                                {% elif organ.0 == 'heart' %}❤️
-                                {% elif organ.0 == 'lungs' %}🫁
-                                {% elif organ.0 == 'pancreas' %}🩸
+                                {% if organ_value == 'kidney' %}🫀
+                                {% elif organ_value == 'liver' %}🍖
+                                {% elif organ_value == 'heart' %}❤️
+                                {% elif organ_value == 'lungs' %}🫁
+                                {% elif organ_value == 'pancreas' %}🩸
                                 {% else %}⚕️{% endif %}
                             </div>
-                            <div class="font-medium text-gray-900 dark:text-white capitalize">{{ organ.1 }}</div>
-                            <input type="checkbox" name="{{ form.organs_needed.name }}" value="{{ organ.0 }}" 
+                            <div class="font-medium text-gray-900 dark:text-white capitalize">{{ organ_label }}</div>
+                            <input type="checkbox" name="{{ form.organs_needed.name }}" value="{{ organ_value }}" 
                                    class="hidden organ-checkbox"
-                                   {% if organ.0 in form.organs_needed.value %}checked{% endif %}>
+                                   {% if organ_value in form.organs_needed.value or organ_value|stringformat:'s' in form.organs_needed.value %}checked{% endif %}>
                         </div>
                         {% endif %}
                         {% endfor %}
@@ -360,8 +360,8 @@ HOW: Uses Django forms with pre-populated recipient data, Tailwind CSS for respo
                         <select name="{{ form.smoking_status.name }}" id="{{ form.smoking_status.id_for_label }}"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.smoking_status.errors %}form-error{% endif %}">
                             <option value="">Select smoking status</option>
-                            <option value="true" {% if form.smoking_status.value == True %}selected{% endif %}>Smoker</option>
-                            <option value="false" {% if form.smoking_status.value == False %}selected{% endif %}>Non-smoker</option>
+                            <option value="1" {% if form.smoking_status.value == True %}selected{% endif %}>Smoker</option>
+                            <option value="0" {% if form.smoking_status.value == False %}selected{% endif %}>Non-smoker</option>
                         </select>
                         {% if form.smoking_status.errors %}
                         <div class="error-message">{{ form.smoking_status.errors.0 }}</div>
@@ -376,8 +376,8 @@ HOW: Uses Django forms with pre-populated recipient data, Tailwind CSS for respo
                         <select name="{{ form.alcohol_use.name }}" id="{{ form.alcohol_use.id_for_label }}"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.alcohol_use.errors %}form-error{% endif %}">
                             <option value="">Select alcohol use</option>
-                            <option value="true" {% if form.alcohol_use.value == True %}selected{% endif %}>User</option>
-                            <option value="false" {% if form.alcohol_use.value == False %}selected{% endif %}>Non-user</option>
+                            <option value="1" {% if form.alcohol_use.value == True %}selected{% endif %}>User</option>
+                            <option value="0" {% if form.alcohol_use.value == False %}selected{% endif %}>Non-user</option>
                         </select>
                         {% if form.alcohol_use.errors %}
                         <div class="error-message">{{ form.alcohol_use.errors.0 }}</div>
@@ -392,8 +392,8 @@ HOW: Uses Django forms with pre-populated recipient data, Tailwind CSS for respo
                         <select name="{{ form.drug_use.name }}" id="{{ form.drug_use.id_for_label }}"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.drug_use.errors %}form-error{% endif %}">
                             <option value="">Select drug use</option>
-                            <option value="true" {% if form.drug_use.value == True %}selected{% endif %}>User</option>
-                            <option value="false" {% if form.drug_use.value == False %}selected{% endif %}>Non-user</option>
+                            <option value="1" {% if form.drug_use.value == True %}selected{% endif %}>User</option>
+                            <option value="0" {% if form.drug_use.value == False %}selected{% endif %}>Non-user</option>
                         </select>
                         {% if form.drug_use.errors %}
                         <div class="error-message">{{ form.drug_use.errors.0 }}</div>
@@ -407,7 +407,7 @@ HOW: Uses Django forms with pre-populated recipient data, Tailwind CSS for respo
                         Average Sleep (hours)
                     </label>
                     <input type="number" name="{{ form.avg_sleep.name }}" id="{{ form.avg_sleep.id_for_label }}" 
-                           value="{{ form.avg_sleep.value }}"
+                           value="{{ form.avg_sleep.value|default:'' }}"
                            min="0" max="24" step="0.5"
                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.avg_sleep.errors %}form-error{% endif %}"
                            placeholder="e.g., 7.5">
@@ -489,6 +489,28 @@ HOW: Uses Django forms with pre-populated recipient data, Tailwind CSS for respo
 
 {% block extra_js %}
 <script>
+    // Notification function (moved to top for availability)
+    function showNotification(message, type) {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.form-notification');
+        existingNotifications.forEach(notif => notif.remove());
+        
+        const notification = document.createElement('div');
+        notification.className = `form-notification fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+            type === 'error' ? 'bg-red-500 text-white' : 
+            type === 'success' ? 'bg-green-500 text-white' : 
+            type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+        }`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Organ selection functionality
         const organOptions = document.querySelectorAll('.organ-option');
@@ -568,38 +590,23 @@ HOW: Uses Django forms with pre-populated recipient data, Tailwind CSS for respo
             }
         });
         
-        // Notification function
-        function showNotification(message, type) {
-            // Remove existing notifications
-            const existingNotifications = document.querySelectorAll('.form-notification');
-            existingNotifications.forEach(notif => notif.remove());
-            
-            const notification = document.createElement('div');
-            notification.className = `form-notification fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
-                type === 'error' ? 'bg-red-500 text-white' : 
-                type === 'success' ? 'bg-green-500 text-white' : 
-                type === 'warning' ? 'bg-yellow-500 text-white' :
-                'bg-blue-500 text-white'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-        
         // Auto-save functionality for critical medical information
         let autoSaveTimeout;
-        const criticalFields = document.querySelectorAll('#{{ form.medical_condition.id_for_label }}, #{{ form.urgency_level.id_for_label }}, #{{ form.organs_needed.id_for_label }}');
+        const criticalFields = [
+            document.getElementById('{{ form.medical_condition.id_for_label }}'),
+            document.getElementById('{{ form.urgency_level.id_for_label }}'),
+            ...document.querySelectorAll('.organ-checkbox')
+        ];
+        
         criticalFields.forEach(field => {
-            field.addEventListener('change', function() {
-                clearTimeout(autoSaveTimeout);
-                autoSaveTimeout = setTimeout(() => {
-                    showNotification('Critical medical information updated. Recalculating matches...', 'info');
-                }, 1000);
-            });
+            if (field) {
+                field.addEventListener('change', function() {
+                    clearTimeout(autoSaveTimeout);
+                    autoSaveTimeout = setTimeout(() => {
+                        showNotification('Critical medical information updated. Recalculating matches...', 'info');
+                    }, 1000);
+                });
+            }
         });
     });
     

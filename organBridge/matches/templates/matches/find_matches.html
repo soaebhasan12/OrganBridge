@@ -171,7 +171,7 @@
                         <input type="text" 
                                placeholder="Search donors by location, blood type..."
                                class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                               hx-get="{% url 'search_donors' %}"
+                               hx-get="{% url 'matches:my_matches' %}"
                                hx-trigger="keyup changed delay:500ms"
                                hx-target="#matches-grid"
                                hx-indicator="#search-indicator">
@@ -198,7 +198,7 @@
                         <span class="ml-2">Nearby</span>
                     </button>
                     <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium flex items-center"
-                            hx-get="{% url 'match_preferences' %}"
+                            hx-get="{% url 'matches:match_preferences' %}"
                             hx-target="body"
                             hx-push-url="true">
                         <span>⚙️</span>
@@ -311,20 +311,20 @@
                     -->
                     <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex space-x-3">
-                            <a href="{% url 'match_detail' match.id %}" 
-                               class="flex-1 bg-primary-500 text-white text-center py-2 rounded-lg hover:bg-primary-600 transition-colors font-medium">
+                            <a href="{% url 'matches:match_detail' match_id=match.match_id %}" 
+                            class="flex-1 bg-primary-500 text-white text-center py-2 rounded-lg hover:bg-primary-600 transition-colors font-medium">
                                 View Details
                             </a>
                             <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                    hx-post="{% url 'update_match_status' match.id 'accepted' %}"
-                                    hx-target="#match-{{ match.id }}-status"
+                                    hx-post="{% url 'matches:update_match_status' match_id=match.match_id status='accepted' %}"
+                                    hx-target="#match-{{ match.match_id }}-status"
                                     hx-confirm="Are you sure you want to accept this match?">
                                 👍 Accept
                             </button>
                         </div>
                         
                         <!-- Quick Action Status -->
-                        <div id="match-{{ match.id }}-status" class="mt-2"></div>
+                        <div id="match-{{ match.match_id }}-status" class="mt-2"></div>
                     </div>
                 </div>
                 {% endfor %}
@@ -346,12 +346,12 @@
                         Try adjusting your search filters or check back later.
                     </p>
                     <div class="space-y-3">
-                        <a href="{% url 'match_preferences' %}" 
+                        <a href="{% url 'matches:match_preferences' %}" 
                            class="inline-block bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors font-medium">
                             Adjust Search Preferences
                         </a>
                         <br>
-                        <a href="{% url 'edit_profile' %}" 
+                        <a href="{% url 'profiles:edit_profile' %}" 
                            class="inline-block border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             Update My Profile
                         </a>

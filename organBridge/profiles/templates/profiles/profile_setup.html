@@ -67,6 +67,11 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
         background: white;
     }
     
+    .dark .organ-option {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    
     .organ-option:hover {
         border-color: #3b82f6;
         transform: translateY(-2px);
@@ -76,6 +81,11 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
         border-color: #10b981;
         background: #f0fdf4;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark .organ-option.selected {
+        background: #064e3b;
+        border-color: #10b981;
     }
     
     /* Custom Checkbox Styling */
@@ -108,6 +118,17 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
         background: linear-gradient(90deg, #3b82f6, #10b981);
         transition: width 0.3s ease;
     }
+
+    /* Form Validation */
+    .form-error {
+        border-color: #ef4444 !important;
+    }
+    
+    .error-message {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 4px;
+    }
 </style>
 {% endblock %}
 
@@ -126,12 +147,12 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center justify-center">
                 <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-3 rounded-xl mr-4">
-                    {% if user.is_donor %}❤️{% else %}🫀{% endif %}
+                    {% if user_type == 'donor' %}❤️{% else %}🫀{% endif %}
                 </span>
-                Complete Your {{ user_type }} Profile
+                Complete Your {{ user_type|title }} Profile
             </h1>
             <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">
-                {% if user.is_donor %}
+                {% if user_type == 'donor' %}
                 Help save lives by completing your organ donor profile. Your information will be used for matching with recipients in need.
                 {% else %}
                 Provide your medical information to find compatible organ donors. Your data is secure and confidential.
@@ -156,7 +177,7 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                 <div class="text-center">
                     <div class="form-step pending mx-auto" id="step2">2</div>
                     <p class="text-xs mt-2 text-gray-600 dark:text-gray-400">
-                        {% if user.is_donor %}Health Details{% else %}Medical Info{% endif %}
+                        {% if user_type == 'donor' %}Health Details{% else %}Medical Info{% endif %}
                     </p>
                 </div>
                 <div class="text-center">
@@ -204,19 +225,22 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Donor Specific Fields -->
-                        {% if user.is_donor %}
+                        {% if user_type == 'donor' %}
                         <div>
                             <label for="{{ form.health_status.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Health Status *
                             </label>
                             <select name="{{ form.health_status.name }}" id="{{ form.health_status.id_for_label }}" 
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.health_status.errors %}form-error{% endif %}">
                                 <option value="">Select your health status</option>
-                                <option value="excellent">Excellent</option>
-                                <option value="good">Good</option>
-                                <option value="fair">Fair</option>
-                                <option value="poor">Poor</option>
+                                <option value="excellent" {% if form.health_status.value == 'excellent' %}selected{% endif %}>Excellent</option>
+                                <option value="good" {% if form.health_status.value == 'good' %}selected{% endif %}>Good</option>
+                                <option value="fair" {% if form.health_status.value == 'fair' %}selected{% endif %}>Fair</option>
+                                <option value="poor" {% if form.health_status.value == 'poor' %}selected{% endif %}>Poor</option>
                             </select>
+                            {% if form.health_status.errors %}
+                            <div class="error-message">{{ form.health_status.errors.0 }}</div>
+                            {% endif %}
                         </div>
                         
                         <div>
@@ -224,7 +248,11 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                 Last Medical Check
                             </label>
                             <input type="date" name="{{ form.last_medical_check.name }}" id="{{ form.last_medical_check.id_for_label }}"
-                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                   value="{{ form.last_medical_check.value|default:'' }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.last_medical_check.errors %}form-error{% endif %}">
+                            {% if form.last_medical_check.errors %}
+                            <div class="error-message">{{ form.last_medical_check.errors.0 }}</div>
+                            {% endif %}
                         </div>
                         {% else %}
                         <!-- Recipient Specific Fields -->
@@ -233,8 +261,12 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                 Medical Condition *
                             </label>
                             <input type="text" name="{{ form.medical_condition.name }}" id="{{ form.medical_condition.id_for_label }}"
-                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                   value="{{ form.medical_condition.value|default:'' }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.medical_condition.errors %}form-error{% endif %}"
                                    placeholder="e.g., Kidney Failure, Liver Cirrhosis">
+                            {% if form.medical_condition.errors %}
+                            <div class="error-message">{{ form.medical_condition.errors.0 }}</div>
+                            {% endif %}
                         </div>
                         
                         <div>
@@ -242,46 +274,53 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                 Urgency Level *
                             </label>
                             <select name="{{ form.urgency_level.name }}" id="{{ form.urgency_level.id_for_label }}"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.urgency_level.errors %}form-error{% endif %}">
                                 <option value="">Select urgency level</option>
-                                <option value="critical">Critical</option>
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
+                                <option value="critical" {% if form.urgency_level.value == 'critical' %}selected{% endif %}>Critical</option>
+                                <option value="high" {% if form.urgency_level.value == 'high' %}selected{% endif %}>High</option>
+                                <option value="medium" {% if form.urgency_level.value == 'medium' %}selected{% endif %}>Medium</option>
+                                <option value="low" {% if form.urgency_level.value == 'low' %}selected{% endif %}>Low</option>
                             </select>
+                            {% if form.urgency_level.errors %}
+                            <div class="error-message">{{ form.urgency_level.errors.0 }}</div>
+                            {% endif %}
                         </div>
                         {% endif %}
                         
-                        <!-- Common Fields -->
+                        <!-- Common Fields - Organs -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                                {% if user.is_donor %}Organs Willing to Donate{% else %}Organs Needed{% endif %} *
+                                {% if user_type == 'donor' %}Organs Willing to Donate{% else %}Organs Needed{% endif %} *
                             </label>
                             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="organsGrid">
-                                {% for organ in form.organs_donating.field.choices %}
-                                {% if organ.0 %}
-                                <div class="organ-option" data-organ="{{ organ.0 }}">
+                                {% for organ_value, organ_label in organ_choices %}
+                                {% if organ_value %}
+                                <div class="organ-option {% if organ_value in selected_organs %}selected{% endif %}" data-organ="{{ organ_value }}">
                                     <div class="text-3xl mb-2">
-                                        {% if organ.0 == 'kidney' %}🫀
-                                        {% elif organ.0 == 'liver' %}🍖
-                                        {% elif organ.0 == 'heart' %}❤️
-                                        {% elif organ.0 == 'lungs' %}🫁
-                                        {% elif organ.0 == 'pancreas' %}🩸
+                                        {% if organ_value == 'kidney' %}🫀
+                                        {% elif organ_value == 'liver' %}🍖
+                                        {% elif organ_value == 'heart' %}❤️
+                                        {% elif organ_value == 'lungs' %}🫁
+                                        {% elif organ_value == 'pancreas' %}🩸
                                         {% else %}⚕️{% endif %}
                                     </div>
-                                    <div class="font-medium text-gray-900 dark:text-white capitalize">{{ organ.1 }}</div>
-                                    <input type="checkbox" name="{{ form.organs_donating.name }}" value="{{ organ.0 }}" 
-                                           class="hidden organ-checkbox">
+                                    <div class="font-medium text-gray-900 dark:text-white capitalize">{{ organ_label }}</div>
+                                    <input type="checkbox" name="organs" value="{{ organ_value }}" 
+                                           class="hidden organ-checkbox"
+                                           {% if organ_value in selected_organs %}checked{% endif %}>
                                 </div>
                                 {% endif %}
                                 {% endfor %}
                             </div>
+                            {% if form.organs.errors %}
+                            <div class="error-message mt-2">{{ form.organs.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
                     
                     <div class="flex justify-end mt-8">
                         <button type="button" class="next-step px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                            Next: {% if user.is_donor %}Health Details{% else %}Medical Info{% endif %} →
+                            Next: {% if user_type == 'donor' %}Health Details{% else %}Medical Info{% endif %} →
                         </button>
                     </div>
                 </div>
@@ -290,7 +329,7 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                 <div class="form-section" id="section2">
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
                         <span class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-2 rounded-lg mr-3">💊</span>
-                        {% if user.is_donor %}Health Details{% else %}Medical Information{% endif %}
+                        {% if user_type == 'donor' %}Health Details{% else %}Medical Information{% endif %}
                     </h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -303,11 +342,14 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                     Smoking Status
                                 </label>
                                 <select name="{{ form.smoking_status.name }}" id="{{ form.smoking_status.id_for_label }}"
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.smoking_status.errors %}form-error{% endif %}">
                                     <option value="">Select smoking status</option>
-                                    <option value="true">Smoker</option>
-                                    <option value="false">Non-smoker</option>
+                                    <option value="1" {% if form.smoking_status.value == True %}selected{% endif %}>Smoker</option>
+                                    <option value="0" {% if form.smoking_status.value == False %}selected{% endif %}>Non-smoker</option>
                                 </select>
+                                {% if form.smoking_status.errors %}
+                                <div class="error-message">{{ form.smoking_status.errors.0 }}</div>
+                                {% endif %}
                             </div>
                             
                             <div>
@@ -315,11 +357,14 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                     Alcohol Use
                                 </label>
                                 <select name="{{ form.alcohol_use.name }}" id="{{ form.alcohol_use.id_for_label }}"
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.alcohol_use.errors %}form-error{% endif %}">
                                     <option value="">Select alcohol use</option>
-                                    <option value="true">User</option>
-                                    <option value="false">Non-user</option>
+                                    <option value="1" {% if form.alcohol_use.value == True %}selected{% endif %}>User</option>
+                                    <option value="0" {% if form.alcohol_use.value == False %}selected{% endif %}>Non-user</option>
                                 </select>
+                                {% if form.alcohol_use.errors %}
+                                <div class="error-message">{{ form.alcohol_use.errors.0 }}</div>
+                                {% endif %}
                             </div>
                             
                             <div>
@@ -327,11 +372,14 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                     Drug Use
                                 </label>
                                 <select name="{{ form.drug_use.name }}" id="{{ form.drug_use.id_for_label }}"
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.drug_use.errors %}form-error{% endif %}">
                                     <option value="">Select drug use</option>
-                                    <option value="true">User</option>
-                                    <option value="false">Non-user</option>
+                                    <option value="1" {% if form.drug_use.value == True %}selected{% endif %}>User</option>
+                                    <option value="0" {% if form.drug_use.value == False %}selected{% endif %}>Non-user</option>
                                 </select>
+                                {% if form.drug_use.errors %}
+                                <div class="error-message">{{ form.drug_use.errors.0 }}</div>
+                                {% endif %}
                             </div>
                         </div>
                         
@@ -344,19 +392,27 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                     Average Sleep (hours)
                                 </label>
                                 <input type="number" name="{{ form.avg_sleep.name }}" id="{{ form.avg_sleep.id_for_label }}" 
+                                       value="{{ form.avg_sleep.value|default:'' }}"
                                        min="0" max="24" step="0.5"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.avg_sleep.errors %}form-error{% endif %}"
                                        placeholder="e.g., 7.5">
+                                {% if form.avg_sleep.errors %}
+                                <div class="error-message">{{ form.avg_sleep.errors.0 }}</div>
+                                {% endif %}
                             </div>
                             
-                            {% if user.is_recipient %}
+                            {% if user_type == 'recipient' %}
                             <div>
                                 <label for="{{ form.preferred_hospital.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Preferred Hospital
                                 </label>
                                 <input type="text" name="{{ form.preferred_hospital.name }}" id="{{ form.preferred_hospital.id_for_label }}"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       value="{{ form.preferred_hospital.value|default:'' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.preferred_hospital.errors %}form-error{% endif %}"
                                        placeholder="e.g., Mayo Clinic, Cleveland Clinic">
+                                {% if form.preferred_hospital.errors %}
+                                <div class="error-message">{{ form.preferred_hospital.errors.0 }}</div>
+                                {% endif %}
                             </div>
                             
                             <div>
@@ -364,8 +420,12 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                     Insurance Provider
                                 </label>
                                 <input type="text" name="{{ form.insurance_provider.name }}" id="{{ form.insurance_provider.id_for_label }}"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       value="{{ form.insurance_provider.value|default:'' }}"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.insurance_provider.errors %}form-error{% endif %}"
                                        placeholder="e.g., Blue Cross, Aetna">
+                                {% if form.insurance_provider.errors %}
+                                <div class="error-message">{{ form.insurance_provider.errors.0 }}</div>
+                                {% endif %}
                             </div>
                             {% endif %}
                         </div>
@@ -439,6 +499,7 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
     document.addEventListener('DOMContentLoaded', function() {
         let currentStep = 1;
         const totalSteps = 3;
+        const userType = "{{ user_type }}";
         
         // Organ selection functionality
         const organOptions = document.querySelectorAll('.organ-option');
@@ -497,60 +558,109 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
         }
         
         function validateStep(step) {
-            // Basic validation for each step
+            let isValid = true;
+            
             switch(step) {
                 case 1:
+                    // Validate organs selection
                     const selectedOrgans = document.querySelectorAll('.organ-checkbox:checked');
                     if (selectedOrgans.length === 0) {
                         alert('Please select at least one organ');
-                        return false;
+                        isValid = false;
                     }
-                    return true;
+                    
+                    // Validate required fields based on user type
+                    if (userType === 'donor') {
+                        const healthStatus = document.getElementById('{{ form.health_status.id_for_label }}');
+                        if (!healthStatus.value) {
+                            healthStatus.classList.add('form-error');
+                            isValid = false;
+                        } else {
+                            healthStatus.classList.remove('form-error');
+                        }
+                    } else {
+                        const medicalCondition = document.getElementById('{{ form.medical_condition.id_for_label }}');
+                        const urgencyLevel = document.getElementById('{{ form.urgency_level.id_for_label }}');
+                        
+                        if (!medicalCondition.value.trim()) {
+                            medicalCondition.classList.add('form-error');
+                            isValid = false;
+                        } else {
+                            medicalCondition.classList.remove('form-error');
+                        }
+                        
+                        if (!urgencyLevel.value) {
+                            urgencyLevel.classList.add('form-error');
+                            isValid = false;
+                        } else {
+                            urgencyLevel.classList.remove('form-error');
+                        }
+                    }
+                    break;
+                    
                 case 2:
-                    // Add additional validation if needed
-                    return true;
+                    // Additional validation can be added here
+                    break;
+                    
                 default:
-                    return true;
+                    break;
             }
+            
+            return isValid;
         }
         
         function updateReviewSummary() {
             const summaryElement = document.getElementById('reviewSummary');
             let summaryHTML = '';
             
-            // Collect form data for summary
-            const formData = new FormData(document.getElementById('profileSetupForm'));
-            
             // Add summary items based on user type
-            if ({{ user.is_donor|yesno:"true,false" }}) {
+            if (userType === 'donor') {
+                const healthStatus = document.getElementById('{{ form.health_status.id_for_label }}');
+                const lastMedicalCheck = document.getElementById('{{ form.last_medical_check.id_for_label }}');
+                
                 summaryHTML += `
                     <div class="flex justify-between">
                         <span class="text-gray-600 dark:text-gray-400">Health Status:</span>
-                        <span class="font-medium text-gray-900 dark:text-white">${document.getElementById('{{ form.health_status.id_for_label }}').value}</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${healthStatus.options[healthStatus.selectedIndex]?.text || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-400">Last Medical Check:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${lastMedicalCheck.value || 'Not specified'}</span>
                     </div>
                 `;
             } else {
+                const medicalCondition = document.getElementById('{{ form.medical_condition.id_for_label }}');
+                const urgencyLevel = document.getElementById('{{ form.urgency_level.id_for_label }}');
+                const preferredHospital = document.getElementById('{{ form.preferred_hospital.id_for_label }}');
+                
                 summaryHTML += `
                     <div class="flex justify-between">
                         <span class="text-gray-600 dark:text-gray-400">Medical Condition:</span>
-                        <span class="font-medium text-gray-900 dark:text-white">${document.getElementById('{{ form.medical_condition.id_for_label }}').value}</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${medicalCondition.value || 'Not specified'}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600 dark:text-gray-400">Urgency Level:</span>
-                        <span class="font-medium text-gray-900 dark:text-white">${document.getElementById('{{ form.urgency_level.id_for_label }}').value}</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${urgencyLevel.options[urgencyLevel.selectedIndex]?.text || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-400">Preferred Hospital:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${preferredHospital.value || 'Not specified'}</span>
                     </div>
                 `;
             }
             
             // Add organs summary
             const selectedOrgans = Array.from(document.querySelectorAll('.organ-checkbox:checked'))
-                .map(cb => cb.value.charAt(0).toUpperCase() + cb.value.slice(1))
+                .map(cb => {
+                    const organName = cb.value.charAt(0).toUpperCase() + cb.value.slice(1);
+                    return organName;
+                })
                 .join(', ');
             
             summaryHTML += `
-                <div class="flex justify-between">
-                    <span class="text-gray-600 dark:text-gray-400">Organs:</span>
-                    <span class="font-medium text-gray-900 dark:text-white">${selectedOrgans}</span>
+                <div class="flex justify-between md:col-span-2">
+                    <span class="text-gray-600 dark:text-gray-400">${userType === 'donor' ? 'Organs Donating' : 'Organs Needed'}:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">${selectedOrgans || 'None selected'}</span>
                 </div>
             `;
             
@@ -559,6 +669,16 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
         
         // Initialize progress
         updateProgress();
+        
+        // Real-time validation for required fields
+        const requiredFields = document.querySelectorAll('select[required], input[required]');
+        requiredFields.forEach(field => {
+            field.addEventListener('change', function() {
+                if (this.value) {
+                    this.classList.remove('form-error');
+                }
+            });
+        });
     });
 </script>
 {% endblock %}

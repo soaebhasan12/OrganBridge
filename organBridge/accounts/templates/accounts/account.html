@@ -44,7 +44,7 @@
     </div>
     
     <br>
-    <a href="{% url 'accounts:edit_account' %}" class="btn">Edit Profile</a>
+    <a href="{% url 'profiles:edit_profile' %}" class="btn">Edit Profile</a>
     <a href="{% if user.is_donor %}{% url 'profiles:donor_dashboard' %}{% else %}{% url 'profiles:recipient_dashboard' %}{% endif %}" class="btn">Dashboard</a>
     <a href="{% url 'accounts:logout' %}" class="btn" style="background: #dc3545;">Logout</a>
 </div>

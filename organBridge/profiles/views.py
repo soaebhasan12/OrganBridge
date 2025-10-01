@@ -17,7 +17,7 @@ def profile_dashboard(request):
         return recipient_dashboard(request)
     else:
         messages.error(request, 'Please complete your profile setup first.')
-        return redirect('profile_setup')
+        return redirect('profiles:profile_setup')
 
 @login_required
 def donor_dashboard(request):

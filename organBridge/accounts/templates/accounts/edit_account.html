@@ -81,8 +81,8 @@
     </div>
 
     <!-- 📱 Progress Steps (Desktop) -->
-    <div class="hidden md:block mb-8">
-        <div class="flex items-center justify-between">
+    <div class="flex mb-8 overflow-x-auto">
+        <div class="flex items-center justify-between min-w-max w-full">
             <!-- Step 1: Basic Info -->
             <div class="flex items-center">
                 <div class="flex items-center justify-center w-8 h-8 
@@ -92,11 +92,11 @@
                 </div>
                 <span class="ml-2 text-sm font-medium 
                             {% if activeTab == 'basic' %}text-primary-600{% else %}text-gray-500{% endif %}">
-                    Basic Info
+                    <span class="hidden sm:inline">Basic Info</span>
                 </span>
             </div>
 
-            <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+            <div class="flex-1 h-1 bg-gray-200 mx-2 sm:mx-4 min-w-4"></div>
             
             <!-- Step 2: Medical Details -->
             <div class="flex items-center">
@@ -107,26 +107,36 @@
                 </div>
                 <span class="ml-2 text-sm font-medium 
                             {% if activeTab == 'medical' %}text-primary-600{% else %}text-gray-500{% endif %}">
-                    Medical Details
+                    <span class="hidden sm:inline">Medical Details</span>
                 </span>
             </div>
-            <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+            <div class="flex-1 h-1 bg-gray-200 mx-2 sm:mx-4 min-w-4"></div>
             
             <!-- Step 3: Preferences -->
             <div class="flex items-center">
-                <div class="flex items-center justify-center w-8 h-8 bg-gray-200 text-gray-500 rounded-full">
+                <div class="flex items-center justify-center w-8 h-8 
+                            {% if activeTab == 'preferences' %}bg-primary-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %} 
+                            rounded-full">
                     3
                 </div>
-                <span class="ml-2 text-sm font-medium text-gray-500">Preferences</span>
+                <span class="ml-2 text-sm font-medium 
+                            {% if activeTab == 'preferences' %}text-primary-600{% else %}text-gray-500{% endif %}">
+                    <span class="hidden sm:inline">Preferences</span>
+                </span>
             </div>
-            <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+            <div class="flex-1 h-1 bg-gray-200 mx-2 sm:mx-4 min-w-4"></div>
             
             <!-- Step 4: Location -->
             <div class="flex items-center">
-                <div class="flex items-center justify-center w-8 h-8 bg-gray-200 text-gray-500 rounded-full">
+                <div class="flex items-center justify-center w-8 h-8 
+                            {% if activeTab == 'location' %}bg-primary-500 text-white{% else %}bg-gray-200 text-gray-500{% endif %} 
+                            rounded-full">
                     4
                 </div>
-                <span class="ml-2 text-sm font-medium text-gray-500">Location</span>
+                <span class="ml-2 text-sm font-medium 
+                            {% if activeTab == 'location' %}text-primary-600{% else %}text-gray-500{% endif %}">
+                    <span class="hidden sm:inline">Location</span>
+                </span>
             </div>
         </div>
     </div>

@@ -122,14 +122,14 @@
                         {% if user.is_authenticated %}
                             {% if user.is_donor %}
                                 <a href="{% url 'matches:find_matches' %}" 
-                                   class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                                          {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                                        {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                                     🔍 Find Recipients
                                 </a>
-                            {% else %}
+                            {% elif user.is_recipient %}
                                 <a href="{% url 'matches:find_matches' %}" 
-                                   class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                                          {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                                        {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
                                     🔍 Find Donors
                                 </a>
                             {% endif %}
