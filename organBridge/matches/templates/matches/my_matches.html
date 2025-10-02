@@ -221,7 +221,7 @@
                                                 {% if request.user == match.donor.user %}
                                                     {{ match.recipient.user.get_full_name|default:match.recipient.user.username }}
                                                 {% else %}
-                                                    {{ match.donor.user.get_full_name|default:match.donor.user.username }}
+                                                    {{ match.donor.get_full_name|default:match.donor.username }}
                                                 {% endif %}
                                             </h3>
                                             <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -283,12 +283,12 @@
                             <!-- Card Footer -->
                             <div class="p-4 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-900">
                                 <div class="flex space-x-2">
-                                    <a href="{% url 'match_detail' match.id %}" 
+                                    <a href="{% url 'matches:match_detail' match.id %}" 
                                        class="flex-1 bg-green-500 text-white text-center py-2 px-3 rounded text-sm font-medium hover:bg-green-600 transition-colors">
                                         View Details
                                     </a>
                                     {% if match.status == 'pending' %}
-                                    <form method="post" action="{% url 'update_match_status' match.id 'rejected' %}" class="flex-1">
+                                    <form method="post" action="{% url 'matches:update_match_status' match.id 'rejected' %}" class="flex-1">
                                         {% csrf_token %}
                                         <button type="submit" 
                                                 class="w-full bg-gray-200 text-gray-700 py-2 px-3 rounded text-sm font-medium hover:bg-gray-300 transition-colors">
@@ -389,7 +389,7 @@
                                             {% if request.user == match.donor.user %}
                                                 {{ match.recipient.user.get_full_name|default:match.recipient.user.username }}
                                             {% else %}
-                                                {{ match.donor.user.get_full_name|default:match.donor.user.username }}
+                                                {{ match.donor.get_full_name|default:match.donor.username }}
                                             {% endif %}
                                         </h4>
                                         <p class="text-sm text-gray-500 dark:text-gray-400">

@@ -7,7 +7,6 @@ class CustomUser(AbstractUser):
         ('recipient', 'Organ Recipient'),
     )
     
-    
     user_type = models.CharField(max_length=20, choices=USER_TYPES)
     phone_number = models.CharField(max_length=15)
     date_of_birth = models.DateField(null=True, blank=True)

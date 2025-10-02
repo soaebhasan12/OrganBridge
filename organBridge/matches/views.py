@@ -20,29 +20,32 @@ def find_matches(request):
     
     try:
         # Get recipient profile
-        recipient = get_object_or_404(RecipientProfile, user=request.user)
+        recipient_profile = get_object_or_404(RecipientProfile, user=request.user)
         
         # Get all available donors
-        donors = DonorProfile.objects.filter(is_available=True)
+        donor_profiles = DonorProfile.objects.filter(is_available=True)
         
-        if not donors.exists():
+        if not donor_profiles.exists():
             messages.warning(request, 'No donors are currently available.')
             return render(request, 'matches/find_matches.html', {
-                'recipient': recipient,
+                'recipient': recipient_profile,
                 'matches': []
             })
         
         # Use ML matching engine to find best matches
         matching_engine = OrganMatchingEngine()
-        matches_data = matching_engine.find_matches(recipient, donors, top_n=10)
+        matches_data = matching_engine.find_matches(recipient_profile, donor_profiles, top_n=10)
         
-        # Format matches for template - FIXED: Create OrganMatch objects or pass proper data
+        # Format matches for template - FIXED: Use CustomUser instances
         formatted_matches = []
         for match_data in matches_data:
+            # Get the donor user from donor profile
+            donor_user = match_data['donor'].user  # FIXED: Get the CustomUser instance
+            
             # Check if OrganMatch already exists, if not create one
             organ_match, created = OrganMatch.objects.get_or_create(
-                donor=match_data['donor'],
-                recipient=recipient,
+                donor=donor_user,  # FIXED: Pass CustomUser, not DonorProfile
+                recipient=request.user,  # FIXED: Pass CustomUser, not RecipientProfile
                 defaults={
                     'match_score': match_data['final_score'],
                     'organs_matched': match_data['compatibility_details']['organs_matched'],
@@ -52,8 +55,9 @@ def find_matches(request):
             )
             
             formatted_matches.append({
-                'match_id': organ_match.id,  # FIXED: Add match_id for URL generation
-                'donor': match_data['donor'],
+                'match_id': organ_match.id,
+                'donor': match_data['donor'],  # Keep profile for display
+                'donor_user': donor_user,  # Add user for OrganMatch
                 'match_score': match_data['final_score'],
                 'ml_score': match_data['ml_score'],
                 'compatibility': get_compatibility_level(match_data['final_score']),
@@ -63,7 +67,7 @@ def find_matches(request):
             })
         
         context = {
-            'recipient': recipient,
+            'recipient': recipient_profile,
             'matches': formatted_matches,
             'total_matches': len(formatted_matches),
         }
@@ -100,9 +104,9 @@ def match_detail(request, match_id):
     match = get_object_or_404(OrganMatch, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.donor.user, match.recipient.user]:
+    if request.user not in [match.donor, match.recipient]:
         messages.error(request, 'You do not have permission to view this match.')
-        return redirect('find_matches')
+        return redirect('matches:find_matches')
     
     messages_list = MatchMessage.objects.filter(match=match)
     message_form = MessageForm()
@@ -121,7 +125,7 @@ def match_detail(request, match_id):
         'match': match,
         'messages': messages_list,
         'message_form': message_form,
-        'other_user': match.recipient.user if request.user == match.donor.user else match.donor.user
+        'other_user': match.recipient if request.user == match.donor else match.donor
     })
 
 
@@ -130,43 +134,74 @@ def update_match_status(request, match_id, status):
     """Update match status (accept/reject)"""
     match = get_object_or_404(OrganMatch, id=match_id)
     
-    if request.user not in [match.donor.user, match.recipient.user]:
+    if request.user not in [match.donor, match.recipient]:
         messages.error(request, 'You do not have permission to update this match.')
-        return redirect('find_matches')
+        return redirect('matches:find_matches')
     
     valid_statuses = ['accepted', 'rejected']
     if status not in valid_statuses:
         messages.error(request, 'Invalid status update.')
-        return redirect('match_detail', match_id=match_id)
+        return redirect('matches:match_detail', match_id=match_id)
     
     match.status = status
     match.save()
     
     messages.success(request, f'Match {status} successfully!')
-    return redirect('match_detail', match_id=match_id)
+    return redirect('matches:match_detail', match_id=match_id)
 
 
 
-@login_required
+# @login_required
+# def my_matches(request):
+#     """Show user's current matches"""
+#     user_matches = OrganMatch.objects.none()
+    
+#     if request.user.is_donor():
+#         user_matches = OrganMatch.objects.filter(donor__user=request.user)
+#     elif request.user.is_recipient():
+#         user_matches = OrganMatch.objects.filter(recipient__user=request.user)
+    
+#     # Separate matches by status
+#     active_matches = user_matches.filter(status__in=['pending', 'accepted']).exclude(expires_at__lt=timezone.now())
+#     expired_matches = user_matches.filter(status='expired') | user_matches.filter(expires_at__lt=timezone.now())
+#     rejected_matches = user_matches.filter(status='rejected')
+    
+#     return render(request, 'matches/my_matches.html', {
+#         'active_matches': active_matches,
+#         'expired_matches': expired_matches,
+#         'rejected_matches': rejected_matches
+#     })
+
+
 def my_matches(request):
-    """Show user's current matches"""
-    user_matches = OrganMatch.objects.none()
-    
-    if request.user.is_donor():
-        user_matches = OrganMatch.objects.filter(donor__user=request.user)
-    elif request.user.is_recipient():
-        user_matches = OrganMatch.objects.filter(recipient__user=request.user)
-    
-    # Separate matches by status
-    active_matches = user_matches.filter(status__in=['pending', 'accepted']).exclude(expires_at__lt=timezone.now())
-    expired_matches = user_matches.filter(status='expired') | user_matches.filter(expires_at__lt=timezone.now())
-    rejected_matches = user_matches.filter(status='rejected')
-    
-    return render(request, 'matches/my_matches.html', {
-        'active_matches': active_matches,
-        'expired_matches': expired_matches,
-        'rejected_matches': rejected_matches
-    })
+    if request.user.is_authenticated:
+        if request.user.user_type == 'recipient':
+            user_matches = OrganMatch.objects.filter(recipient=request.user)
+        elif request.user.user_type == 'donor':
+            user_matches = OrganMatch.objects.filter(donor=request.user)
+        else:
+            user_matches = OrganMatch.objects.none()
+        
+        # Add related user data
+        user_matches = user_matches.select_related('donor', 'recipient')
+        
+        # Calculate different match types for the template
+        active_matches = user_matches.filter(status='pending')
+        accepted_matches = user_matches.filter(status='accepted')
+        rejected_matches = user_matches.filter(status='rejected')
+        expired_matches = user_matches.filter(status='expired')
+        
+        context = {
+            'user_matches': user_matches,
+            'user_type': request.user.user_type,
+            'active_matches': active_matches,
+            'accepted_matches': accepted_matches,
+            'rejected_matches': rejected_matches,
+            'expired_matches': expired_matches,
+        }
+        return render(request, 'matches/my_matches.html', context)
+    else:
+        return redirect('login')
 
 
 @login_required
@@ -192,7 +227,7 @@ def send_message_ajax(request, match_id):
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         match = get_object_or_404(OrganMatch, id=match_id)
         
-        if request.user not in [match.donor.user, match.recipient.user]:
+        if request.user not in [match.donor, match.recipient]:
             return JsonResponse({'error': 'Permission denied'}, status=403)
         
         message_text = request.POST.get('message', '').strip()

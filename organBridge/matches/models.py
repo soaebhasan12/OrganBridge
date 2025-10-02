@@ -1,9 +1,8 @@
-# Yeh app DONORS aur RECIPIENTS ko aapas mein match karega - jaise shaadi.com mein ladka-ladki ko match karte hain, waise hi organ donation ke liye.
-
-
 from django.db import models
 from django.contrib.auth import get_user_model
-from profiles.models import DonorProfile, RecipientProfile
+from django.utils import timezone
+from datetime import timedelta
+import random
 
 CustomUser = get_user_model()
 
@@ -15,10 +14,30 @@ class OrganMatch(models.Model):
         ('expired', 'Expired'),
     )
     
-    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='matches')
-    recipient = models.ForeignKey(RecipientProfile, on_delete=models.CASCADE, related_name='matches')
+    ORGAN_CHOICES = (
+        ('kidney', 'Kidney'),
+        ('liver', 'Liver'),
+        ('heart', 'Heart'),
+        ('lung', 'Lung'),
+        ('pancreas', 'Pancreas'),
+        ('cornea', 'Cornea'),
+        ('bone_marrow', 'Bone Marrow'),
+    )
+    
+    donor = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.CASCADE, 
+        related_name='donor_matches',
+        limit_choices_to={'user_type': 'donor'}
+    )
+    recipient = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.CASCADE, 
+        related_name='recipient_matches',
+        limit_choices_to={'user_type': 'recipient'}
+    )
     match_score = models.FloatField(help_text="ML-generated compatibility score (0-100)")
-    organs_matched = models.JSONField(help_text="List of organs that match")
+    organs_matched = models.JSONField(help_text="List of organs that match", default=list)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -29,11 +48,17 @@ class OrganMatch(models.Model):
         ordering = ['-match_score', '-created_at']
     
     def __str__(self):
-        return f"Match: {self.donor.user.username} -> {self.recipient.user.username} ({self.match_score}%)"
+        return f"Match: {self.donor.username} -> {self.recipient.username} ({self.match_score}%)"
     
     def is_expired(self):
-        from django.utils import timezone
         return timezone.now() > self.expires_at
+    
+    def save(self, *args, **kwargs):
+        # Auto-set expiration date if not provided
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(days=30)
+        super().save(*args, **kwargs)
+
 
 class MatchMessage(models.Model):
     match = models.ForeignKey(OrganMatch, on_delete=models.CASCADE, related_name='messages')
@@ -47,6 +72,7 @@ class MatchMessage(models.Model):
     
     def __str__(self):
         return f"Message from {self.sender.username}"
+
 
 class MatchPreference(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)

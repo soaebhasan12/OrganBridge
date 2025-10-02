@@ -289,32 +289,43 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                         
                         <!-- Common Fields - Organs -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                            <label for="{{ form.organs_needed.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {% if user_type == 'donor' %}Organs Willing to Donate{% else %}Organs Needed{% endif %} *
                             </label>
-                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="organsGrid">
+                            
+                            {% if user_type == 'donor' %}
+                            <select name="{{ form.organs_donating.name }}" id="{{ form.organs_donating.id_for_label }}" 
+                                    multiple class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.organs_donating.errors %}form-error{% endif %}"
+                                    size="6">
                                 {% for organ_value, organ_label in organ_choices %}
-                                {% if organ_value %}
-                                <div class="organ-option {% if organ_value in selected_organs %}selected{% endif %}" data-organ="{{ organ_value }}">
-                                    <div class="text-3xl mb-2">
-                                        {% if organ_value == 'kidney' %}🫀
-                                        {% elif organ_value == 'liver' %}🍖
-                                        {% elif organ_value == 'heart' %}❤️
-                                        {% elif organ_value == 'lungs' %}🫁
-                                        {% elif organ_value == 'pancreas' %}🩸
-                                        {% else %}⚕️{% endif %}
-                                    </div>
-                                    <div class="font-medium text-gray-900 dark:text-white capitalize">{{ organ_label }}</div>
-                                    <input type="checkbox" name="organs" value="{{ organ_value }}" 
-                                           class="hidden organ-checkbox"
-                                           {% if organ_value in selected_organs %}checked{% endif %}>
-                                </div>
-                                {% endif %}
+                                <option value="{{ organ_value }}" 
+                                        {% if organ_value in form.organs_donating.value %}selected{% endif %}>
+                                    {{ organ_label }}
+                                </option>
                                 {% endfor %}
-                            </div>
-                            {% if form.organs.errors %}
-                            <div class="error-message mt-2">{{ form.organs.errors.0 }}</div>
+                            </select>
+                            {% if form.organs_donating.errors %}
+                            <div class="error-message mt-2">{{ form.organs_donating.errors.0 }}</div>
                             {% endif %}
+                            {% else %}
+                            <select name="{{ form.organs_needed.name }}" id="{{ form.organs_needed.id_for_label }}" 
+                                    multiple class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.organs_needed.errors %}form-error{% endif %}"
+                                    size="6">
+                                {% for organ_value, organ_label in organ_choices %}
+                                <option value="{{ organ_value }}" 
+                                        {% if organ_value in form.organs_needed.value %}selected{% endif %}>
+                                    {{ organ_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.organs_needed.errors %}
+                            <div class="error-message mt-2">{{ form.organs_needed.errors.0 }}</div>
+                            {% endif %}
+                            {% endif %}
+                            
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                💡 Hold <kbd class="px-1 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded">Ctrl</kbd> (Windows) or <kbd class="px-1 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded">Cmd</kbd> (Mac) to select multiple organs
+                            </p>
                         </div>
                     </div>
                     
@@ -338,17 +349,15 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                             <h4 class="font-medium text-gray-900 dark:text-white">Lifestyle Information</h4>
                             
                             <div>
-                                <label for="{{ form.smoking_status.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Smoking Status
+                                <label for="{{ form.preferred_hospital.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Preferred Hospital
                                 </label>
-                                <select name="{{ form.smoking_status.name }}" id="{{ form.smoking_status.id_for_label }}"
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.smoking_status.errors %}form-error{% endif %}">
-                                    <option value="">Select smoking status</option>
-                                    <option value="1" {% if form.smoking_status.value == True %}selected{% endif %}>Smoker</option>
-                                    <option value="0" {% if form.smoking_status.value == False %}selected{% endif %}>Non-smoker</option>
-                                </select>
-                                {% if form.smoking_status.errors %}
-                                <div class="error-message">{{ form.smoking_status.errors.0 }}</div>
+                                <input type="text" name="{{ form.preferred_hospital.name }}" id="{{ form.preferred_hospital.id_for_label }}"
+                                    value="{{ form.preferred_hospital.value|default:'' }}"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.preferred_hospital.errors %}form-error{% endif %}"
+                                    placeholder="e.g., Mayo Clinic, Cleveland Clinic">
+                                {% if form.preferred_hospital.errors %}
+                                <div class="error-message">{{ form.preferred_hospital.errors.0 }}</div>
                                 {% endif %}
                             </div>
                             
@@ -427,6 +436,30 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                                 <div class="error-message">{{ form.insurance_provider.errors.0 }}</div>
                                 {% endif %}
                             </div>
+
+                            <div>
+                                <label for="{{ form.previous_transplants.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Previous Transplants *
+                                </label>
+                                <input type="number" name="{{ form.previous_transplants.name }}" id="{{ form.previous_transplants.id_for_label }}"
+                                    value="{{ form.previous_transplants.value|default:'0' }}" min="0"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.previous_transplants.errors %}form-error{% endif %}">
+                                {% if form.previous_transplants.errors %}
+                                <div class="error-message">{{ form.previous_transplants.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="{{ form.max_travel_distance.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Max Travel Distance (miles) *
+                                </label>
+                                <input type="number" name="{{ form.max_travel_distance.name }}" id="{{ form.max_travel_distance.id_for_label }}"
+                                    value="{{ form.max_travel_distance.value|default:'100' }}" min="0"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white {% if form.max_travel_distance.errors %}form-error{% endif %}">
+                                {% if form.max_travel_distance.errors %}
+                                <div class="error-message">{{ form.max_travel_distance.errors.0 }}</div>
+                                {% endif %}
+                            </div>                            
                             {% endif %}
                         </div>
                     </div>
@@ -501,16 +534,6 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
         const totalSteps = 3;
         const userType = "{{ user_type }}";
         
-        // Organ selection functionality
-        const organOptions = document.querySelectorAll('.organ-option');
-        organOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                const checkbox = this.querySelector('.organ-checkbox');
-                checkbox.checked = !checkbox.checked;
-                this.classList.toggle('selected', checkbox.checked);
-            });
-        });
-        
         // Step navigation
         document.querySelectorAll('.next-step').forEach(button => {
             button.addEventListener('click', function() {
@@ -563,8 +586,16 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
             switch(step) {
                 case 1:
                     // Validate organs selection
-                    const selectedOrgans = document.querySelectorAll('.organ-checkbox:checked');
-                    if (selectedOrgans.length === 0) {
+                    let organsSelected = false;
+                    if (userType === 'donor') {
+                        const organsSelect = document.getElementById('{{ form.organs_donating.id_for_label }}');
+                        organsSelected = organsSelect.selectedOptions.length > 0;
+                    } else {
+                        const organsSelect = document.getElementById('{{ form.organs_needed.id_for_label }}');
+                        organsSelected = organsSelect.selectedOptions.length > 0;
+                    }
+                    
+                    if (!organsSelected) {
                         alert('Please select at least one organ');
                         isValid = false;
                     }
@@ -579,22 +610,27 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                             healthStatus.classList.remove('form-error');
                         }
                     } else {
+                        // Recipient validation
                         const medicalCondition = document.getElementById('{{ form.medical_condition.id_for_label }}');
                         const urgencyLevel = document.getElementById('{{ form.urgency_level.id_for_label }}');
+                        const previousTransplants = document.getElementById('{{ form.previous_transplants.id_for_label }}');
+                        const maxTravelDistance = document.getElementById('{{ form.max_travel_distance.id_for_label }}');
                         
-                        if (!medicalCondition.value.trim()) {
-                            medicalCondition.classList.add('form-error');
-                            isValid = false;
-                        } else {
-                            medicalCondition.classList.remove('form-error');
-                        }
+                        const requiredFields = [
+                            {field: medicalCondition, name: 'Medical Condition'},
+                            {field: urgencyLevel, name: 'Urgency Level'},
+                            {field: previousTransplants, name: 'Previous Transplants'},
+                            {field: maxTravelDistance, name: 'Max Travel Distance'}
+                        ];
                         
-                        if (!urgencyLevel.value) {
-                            urgencyLevel.classList.add('form-error');
-                            isValid = false;
-                        } else {
-                            urgencyLevel.classList.remove('form-error');
-                        }
+                        requiredFields.forEach(item => {
+                            if (!item.field.value && item.field.value !== '0') {
+                                item.field.classList.add('form-error');
+                                isValid = false;
+                            } else {
+                                item.field.classList.remove('form-error');
+                            }
+                        });
                     }
                     break;
                     
@@ -628,10 +664,25 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                         <span class="font-medium text-gray-900 dark:text-white">${lastMedicalCheck.value || 'Not specified'}</span>
                     </div>
                 `;
+                
+                // Add organs summary for donor
+                const donorOrgansSelect = document.getElementById('{{ form.organs_donating.id_for_label }}');
+                const selectedDonorOrgans = Array.from(donorOrgansSelect.selectedOptions)
+                    .map(option => option.text)
+                    .join(', ');
+                    
+                summaryHTML += `
+                    <div class="flex justify-between md:col-span-2">
+                        <span class="text-gray-600 dark:text-gray-400">Organs Donating:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${selectedDonorOrgans || 'None selected'}</span>
+                    </div>
+                `;
             } else {
                 const medicalCondition = document.getElementById('{{ form.medical_condition.id_for_label }}');
                 const urgencyLevel = document.getElementById('{{ form.urgency_level.id_for_label }}');
                 const preferredHospital = document.getElementById('{{ form.preferred_hospital.id_for_label }}');
+                const previousTransplants = document.getElementById('{{ form.previous_transplants.id_for_label }}');
+                const maxTravelDistance = document.getElementById('{{ form.max_travel_distance.id_for_label }}');
                 
                 summaryHTML += `
                     <div class="flex justify-between">
@@ -646,23 +697,29 @@ HOW: Uses Django forms with conditional rendering based on user type, with Tailw
                         <span class="text-gray-600 dark:text-gray-400">Preferred Hospital:</span>
                         <span class="font-medium text-gray-900 dark:text-white">${preferredHospital.value || 'Not specified'}</span>
                     </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-400">Previous Transplants:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${previousTransplants.value || '0'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-400">Max Travel Distance:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${maxTravelDistance.value || '100'} miles</span>
+                    </div>
+                `;
+                
+                // Add organs summary for recipient
+                const recipientOrgansSelect = document.getElementById('{{ form.organs_needed.id_for_label }}');
+                const selectedRecipientOrgans = Array.from(recipientOrgansSelect.selectedOptions)
+                    .map(option => option.text)
+                    .join(', ');
+                    
+                summaryHTML += `
+                    <div class="flex justify-between md:col-span-2">
+                        <span class="text-gray-600 dark:text-gray-400">Organs Needed:</span>
+                        <span class="font-medium text-gray-900 dark:text-white">${selectedRecipientOrgans || 'None selected'}</span>
+                    </div>
                 `;
             }
-            
-            // Add organs summary
-            const selectedOrgans = Array.from(document.querySelectorAll('.organ-checkbox:checked'))
-                .map(cb => {
-                    const organName = cb.value.charAt(0).toUpperCase() + cb.value.slice(1);
-                    return organName;
-                })
-                .join(', ');
-            
-            summaryHTML += `
-                <div class="flex justify-between md:col-span-2">
-                    <span class="text-gray-600 dark:text-gray-400">${userType === 'donor' ? 'Organs Donating' : 'Organs Needed'}:</span>
-                    <span class="font-medium text-gray-900 dark:text-white">${selectedOrgans || 'None selected'}</span>
-                </div>
-            `;
             
             summaryElement.innerHTML = summaryHTML;
         }

@@ -56,6 +56,11 @@ class DonorProfile(BaseProfile):
     height = models.FloatField(help_text="Height in cm", null=True, blank=True)
     weight = models.FloatField(help_text="Weight in kg", null=True, blank=True)
     bmi = models.FloatField(null=True, blank=True, help_text="Body Mass Index")
+
+    last_medical_check = models.DateField(null=True, blank=True, verbose_name="Last Medical Check")
+    avg_sleep = models.FloatField(null=True, blank=True, verbose_name="Average Sleep Hours")
+    preferred_hospital = models.CharField(max_length=255, blank=True, verbose_name="Preferred Hospital")
+    insurance_provider = models.CharField(max_length=255, blank=True, verbose_name="Insurance Provider")
     
     # Availability
     is_available = models.BooleanField(default=True, help_text="Currently available for donation")
@@ -99,16 +104,23 @@ class RecipientProfile(BaseProfile):
     current_treatment = models.TextField(blank=True, help_text="Current treatment plan")
     
     # Hospital preferences
-    preferred_hospitals = models.JSONField(default=list, help_text="Preferred hospitals for transplant")
+    preferred_hospitals = models.JSONField(default=list, help_text="Preferred hospitals for transplant", blank=True, null=True)
     current_hospital = models.CharField(max_length=100, blank=True)
     
     # Transplant history
-    previous_transplants = models.IntegerField(default=0)
+    previous_transplants = models.IntegerField(default=0, blank=True)
     insurance_coverage = models.BooleanField(default=False)
     
     # Search preferences
-    max_travel_distance = models.IntegerField(default=100, help_text="Maximum willing to travel in miles")
+    max_travel_distance = models.IntegerField(default=100, help_text="Maximum willing to travel in miles", blank=True)
     willing_to_relocate = models.BooleanField(default=False)
+
+    smoking_status = models.BooleanField(null=True, blank=True, verbose_name="Smoking Status")
+    alcohol_use = models.BooleanField(null=True, blank=True, verbose_name="Alcohol Use")
+    drug_use = models.BooleanField(null=True, blank=True, verbose_name="Drug Use")
+    avg_sleep = models.FloatField(null=True, blank=True, verbose_name="Average Sleep Hours")
+    preferred_hospital = models.CharField(max_length=255, blank=True, verbose_name="Preferred Hospital")
+    insurance_provider = models.CharField(max_length=255, blank=True, verbose_name="Insurance Provider")
     
     def __str__(self):
         return f"Recipient: {self.user.username}"

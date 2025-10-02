@@ -180,14 +180,14 @@
                         <!-- Action Buttons -->
                         <div class="flex space-x-3">
                             {% if match.status == 'pending' %}
-                            <form method="post" action="{% url 'update_match_status' match.id 'accepted' %}">
+                            <form method="post" action="{% url 'matches:update_match_status' match.id 'accepted' %}">
                                 {% csrf_token %}
                                 <button type="submit" 
                                         class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium flex items-center">
                                     <span>👍 Accept Match</span>
                                 </button>
                             </form>
-                            <form method="post" action="{% url 'update_match_status' match.id 'rejected' %}">
+                            <form method="post" action="{% url 'matches:update_match_status' match.id 'rejected' %}">
                                 {% csrf_token %}
                                 <button type="submit" 
                                         class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium flex items-center">
