@@ -1,0 +1,542 @@
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}OrganBridge - AI-Powered Organ Matching Platform{% endblock %}
+
+{% block css_section %}
+<style>
+    /* 🎨 Homepage Styles */
+    .hero-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .healthcare-gradient {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .feature-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-left: 4px solid;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .ml-factor {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 🚀 Hero Section -->
+<section class="hero-gradient text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Hero Content -->
+            <div>
+                <div class="inline-flex items-center bg-white/20 rounded-full px-4 py-2 mb-6">
+                    <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                    <span class="text-sm">AI-Powered Organ Matching Platform</span>
+                </div>
+                
+                <h1 class="text-5xl lg:text-6xl font-bold mb-6">
+                    Saving Lives Through 
+                    <span class="text-blue-200">Intelligent Matching</span>
+                </h1>
+                <p class="text-xl mb-8 text-blue-100">
+                    OrganBridge uses advanced machine learning to connect organ donors with recipients 
+                    3x faster than traditional systems with 95% match accuracy.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="{% url 'accounts:register' %}" 
+                       class="bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors text-center">
+                        Join the Network
+                    </a>
+                    <a href="#technology" 
+                       class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-purple-600 transition-colors text-center">
+                        See How It Works
+                    </a>
+                </div>
+                
+                <!-- Trust Indicators -->
+                <div class="mt-12 grid grid-cols-3 gap-8">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold">900+</div>
+                        <div class="text-blue-200 text-sm">Successful Matches</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold">95%</div>
+                        <div class="text-blue-200 text-sm">Accuracy Rate</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold">3x Faster</div>
+                        <div class="text-blue-200 text-sm">Matching Speed</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hero Spline Animation -->
+            <div class="relative">
+                <div class="ratio ratio-9x16 rounded-2xl overflow-hidden shadow-2xl">
+                    <spline-viewer 
+                        url="https://prod.spline.design/mTXpHcTpHH3u0Ry0/scene.splinecode"
+                        loading="eager">
+                    </spline-viewer>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 🎯 What Makes Us Different -->
+<section class="py-20 bg-white dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Why OrganBridge Stands Out
+            </h2>
+            <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                Traditional organ donation systems rely on manual processes. We automate and enhance every step with intelligent technology.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="feature-card bg-blue-50 dark:bg-blue-900/20 border-l-blue-500 p-6 rounded-lg">
+                <div class="text-3xl mb-4">🤖</div>
+                <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">AI Matching</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    12-factor ML algorithm analyzes compatibility beyond basic blood type matching
+                </p>
+            </div>
+            
+            <div class="feature-card bg-green-50 dark:bg-green-900/20 border-l-green-500 p-6 rounded-lg">
+                <div class="text-3xl mb-4">⚡</div>
+                <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Real-time Updates</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    HTMX-powered live notifications and chat without page reloads
+                </p>
+            </div>
+            
+            <div class="feature-card bg-purple-50 dark:bg-purple-900/20 border-l-purple-500 p-6 rounded-lg">
+                <div class="text-3xl mb-4">🗺️</div>
+                <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Geographic Matching</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Smart location-based matching to reduce transport time and costs
+                </p>
+            </div>
+            
+            <div class="feature-card bg-red-50 dark:bg-red-900/20 border-l-red-500 p-6 rounded-lg">
+                <div class="text-3xl mb-4">🫀</div>
+                <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Multi-Organ Support</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Comprehensive platform supporting kidney, liver, heart, and other organ types
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% comment %} ## 🤖 Advanced ML Matching {% endcomment %}
+<section id="technology" class="py-20 bg-gray-50 dark:bg-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+                    Intelligent Matching Algorithm
+                </h2>
+                <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">
+                    Our machine learning model analyzes 12 critical factors to ensure optimal donor-recipient compatibility, 
+                    going far beyond traditional blood type matching.
+                </p>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <span class="text-green-500 mr-3">✓</span>
+                        <span class="ml-factor">Blood Type</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-green-500 mr-3">✓</span>
+                        <span class="ml-factor">Age Compatibility</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-green-500 mr-3">✓</span>
+                        <span class="ml-factor">Geographic Distance</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-green-500 mr-3">✓</span>
+                        <span class="ml-factor">Medical History</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-green-500 mr-3">✓</span>
+                        <span class="ml-factor">Lifestyle Factors</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-green-500 mr-3">✓</span>
+                        <span class="ml-factor">Tissue Compatibility</span>
+                    </div>
+                </div>
+                
+                <div class="mt-8 p-4 bg-white dark:bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-gray-900 dark:text-white">Match Accuracy</span>
+                        <span class="text-green-600 font-bold">95%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: 95%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-700 rounded-2xl p-8 shadow-xl">
+                <div class="ratio ratio-16x9">
+                    <spline-viewer 
+                        url="https://prod.spline.design/vAyz6Bm-1qQPiNCy/scene.splinecode"
+                        loading="lazy">
+                    </spline-viewer>
+
+
+                    
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ⚡ Real-time Features -->
+<section class="py-20 bg-white dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Live Communication Platform
+            </h2>
+            <p class="text-xl text-gray-600 dark:text-gray-400">
+                Instant connections between donors, recipients, and medical teams
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center p-6">
+                <div class="text-4xl mb-4 bg-blue-100 dark:bg-blue-900 w-20 h-20 rounded-full flex items-center justify-center mx-auto">💬</div>
+                <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">HTMX Chat</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Real-time messaging between donors and recipients with instant delivery
+                </p>
+            </div>
+            
+            <div class="text-center p-6">
+                <div class="text-4xl mb-4 bg-green-100 dark:bg-green-900 w-20 h-20 rounded-full flex items-center justify-center mx-auto">🔔</div>
+                <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Live Notifications</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Instant alerts for new matches, messages, and status updates
+                </p>
+            </div>
+            
+            <div class="text-center p-6">
+                <div class="text-4xl mb-4 bg-purple-100 dark:bg-purple-900 w-20 h-20 rounded-full flex items-center justify-center mx-auto">📱</div>
+                <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">No Page Reloads</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Seamless experience with dynamic content updates
+                </p>
+            </div>
+        </div>
+        
+        <!-- Chat Demo Preview -->
+        <div class="mt-12 bg-gray-50 dark:bg-gray-800 rounded-2xl p-8">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white dark:bg-gray-700 rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                            <span class="font-semibold">Live Chat - Donor Match Found</span>
+                        </div>
+                    </div>
+                    <div class="p-4 h-64 overflow-y-auto">
+                        <div class="flex justify-start mb-4">
+                            <div class="bg-gray-100 dark:bg-gray-600 rounded-lg p-3 max-w-xs">
+                                <p class="text-sm">Hello! I saw we're a potential match for kidney donation.</p>
+                                <span class="text-xs text-gray-500">2 min ago</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-end mb-4">
+                            <div class="bg-blue-500 text-white rounded-lg p-3 max-w-xs">
+                                <p class="text-sm">Yes, the system shows 92% compatibility!</p>
+                                <span class="text-xs text-blue-200">1 min ago</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-start">
+                            <div class="bg-gray-100 dark:bg-gray-600 rounded-lg p-3 max-w-xs">
+                                <p class="text-sm">Can we schedule a call with the medical team?</p>
+                                <span class="text-xs text-gray-500">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t dark:border-gray-600 p-4">
+                        <div class="flex items-center">
+                            <input type="text" placeholder="Type your message..." 
+                                   class="flex-1 border dark:border-gray-600 rounded-l-lg px-4 py-2 dark:bg-gray-600 dark:text-white">
+                            <button class="bg-blue-500 text-white px-6 py-2 rounded-r-lg font-semibold">
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 📊 Impact Statistics -->
+<section class="py-20 healthcare-gradient text-white" style="color: black;">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style="color: black;">
+        {% comment %} <div class="container-fluid mb-8 rounded-2xl p-8">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+                    <!-- Change ratio to make it shorter -->
+                    <div class="ratio ratio-16x9">  <!-- Wider aspect ratio = shorter height -->
+                            <spline-viewer 
+                                url="https://prod.spline.design/YqFQEjkZy0Sf7H9Z/scene.splinecode" loading="lazy">
+                            </spline-viewer>
+<spline-viewer url="https://prod.spline.design/YqFQEjkZy0Sf7H9Z/scene.splinecode"></spline-viewer>
+                    </div>
+                </div>
+            </div>
+        </div> {% endcomment %}
+
+        <div class="text-center mb-16" style="color: black;">
+            <h2 class="text-4xl font-bold mb-4">
+                Proven Results
+            </h2>
+            <p class="text-xl text-blue-100 max-w-3xl mx-auto" style="color: black;">
+                Our platform has already demonstrated significant impact in organ matching and transplantation
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" style="color: black;">
+            <div>
+                <div class="text-4xl font-bold mb-2">900+</div>
+                <p class="text-blue-100" style="color: black;">Successful Matches</p>
+            </div>
+            <div>
+                <div class="text-4xl font-bold mb-2">95%</div>
+                <p class="text-blue-100" style="color: black;">Match Accuracy Rate</p>
+            </div>
+            <div>
+                <div class="text-4xl font-bold mb-2">3x</div>
+                <p class="text-blue-100" style="color: black;">Faster Matching</p>
+            </div>
+            <div>
+                <div class="text-4xl font-bold mb-2">24/7</div>
+                <p class="text-blue-100" style="color: black;">Platform Availability</p>
+            </div>
+        </div>
+        
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white/20 rounded-xl p-6 text-center backdrop-blur-sm">
+                <div class="text-2xl mb-2">🫀</div>
+                <h4 class="font-bold text-lg mb-2">Kidney Transplants</h4>
+                <p class="text-blue-100" style="color: black;">Primary focus with 900+ records</p>
+            </div>
+            <div class="bg-white/20 rounded-xl p-6 text-center backdrop-blur-sm">
+                <div class="text-2xl mb-2">❤️</div>
+                <h4 class="font-bold text-lg mb-2">Heart & Liver</h4>
+                <p class="text-blue-100" style="color: black;">Multi-organ support ready</p>
+            </div>
+            <div class="bg-white/20 rounded-xl p-6 text-center backdrop-blur-sm">
+                <div class="text-2xl mb-2">🌍</div>
+                <h4 class="font-bold text-lg mb-2">Geographic Reach</h4>
+                <p class="text-blue-100" style="color: black;">City-based matching optimization</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 🛠️ Technology Stack -->
+<section class="py-20 bg-white dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Technology Stack
+            </h2>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="text-center group">
+                <div class="bg-blue-50 dark:bg-blue-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">🐍</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">Django</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Backend Framework</p>
+                </div>
+            </div>
+            
+            <div class="text-center group">
+                <div class="bg-green-50 dark:bg-green-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">🤖</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">Scikit-learn</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">ML Algorithm</p>
+                </div>
+            </div>
+            
+            <div class="text-center group">
+                <div class="bg-purple-50 dark:bg-purple-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">⚡</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">HTMX</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Real-time Features</p>
+                </div>
+            </div>
+            
+            <div class="text-center group">
+                <div class="bg-red-50 dark:bg-red-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">🎨</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">Tailwind CSS</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Modern UI</p>
+                </div>
+            </div>
+
+            <div class="text-center group">
+                <div class="bg-red-50 dark:bg-red-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">🎨</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">Alpine.js</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Modern UI</p>
+                </div>
+            </div>
+
+            <div class="text-center group">
+                <div class="bg-yellow-50 dark:bg-yellow-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">☁️</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">Heroku</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Cloud Hosting</p>
+                </div>
+            </div>
+
+            <div class="text-center group">
+                <div class="bg-teal-50 dark:bg-teal-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">🖼️</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">Spline</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">3D Animations</p>
+                </div>
+            </div>
+
+            <div class="text-center group">
+                <div class="bg-indigo-50 dark:bg-indigo-900/30 p-6 rounded-xl group-hover:scale-105 transition-transform">
+                    <div class="text-3xl mb-3">🗄️</div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white">PostgreSQL</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Database</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- 🚀 Final CTA -->
+<section class="py-20 bg-gradient-to-r from-blue-600 to-purple-700 text-white">
+    <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <h2 class="text-4xl font-bold mb-6">Ready to Transform Organ Donation?</h2>
+        <p class="text-xl mb-8 text-blue-100">
+            Join 900+ successful matches and experience the future of organ transplantation today.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{% url 'accounts:register' %}" 
+               class="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors">
+                Start Matching Now
+            </a>
+            <a href="#technology" 
+               class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-blue-600 transition-colors">
+                View Technology
+            </a>
+        </div>
+        <p class="mt-6 text-blue-200 text-sm">
+            For hospitals and organizations: <a href="#" class="underline font-semibold">Request enterprise demo</a>
+        </p>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.10.72/build/spline-viewer.js"></script>
+
+<script>
+    // Simple and reliable counter animation
+    function animateCounter(element, target, duration = 2000) {
+        let start = 0;
+        const increment = target / (duration / 16); // 60fps
+        const originalText = element.textContent;
+        const hasPlus = originalText.includes('+');
+        const hasPercent = originalText.includes('%');
+        
+        function update() {
+            start += increment;
+            if (start < target) {
+                let displayValue = Math.floor(start);
+                if (hasPlus) displayValue += '+';
+                if (hasPercent) displayValue += '%';
+                element.textContent = displayValue;
+                requestAnimationFrame(update);
+            } else {
+                let finalValue = target;
+                if (hasPlus) finalValue += '+';
+                if (hasPercent) finalValue += '%';
+                element.textContent = finalValue;
+            }
+        }
+        update();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const element = entry.target;
+                    const text = element.textContent.trim();
+                    const numberMatch = text.match(/^(\d+)\+?%?$/);
+                    
+                    if (numberMatch) {
+                        const target = parseInt(numberMatch[1]);
+                        animateCounter(element, target);
+                    }
+                    observer.unobserve(element);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        // Only observe elements that contain numbers
+        document.querySelectorAll('.stat-number, .text-4xl.font-bold').forEach(el => {
+            const text = el.textContent.trim();
+            if (text.match(/^\d+\+?%?$/)) {
+                observer.observe(el);
+            }
+        });
+    });
+</script>
+{% endblock extra_js %}

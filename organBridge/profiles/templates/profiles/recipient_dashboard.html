@@ -53,6 +53,19 @@
 {% block content %}
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="container-fluid mb-8 p-100" >
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+                    <!-- Change ratio to make it shorter -->
+                    <div class="ratio ratio-16x5">  <!-- Wider aspect ratio = shorter height -->
+                        <spline-viewer 
+                            url="https://prod.spline.design/mTXpHcTpHH3u0Ry0/scene.splinecode"
+                            loading="lazy">
+                        </spline-viewer>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- 🎯 Page Header Section -->
         <div class="mb-8">
@@ -365,3 +378,7 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.10.72/build/spline-viewer.js"></script>
+{% endblock extra_js %}

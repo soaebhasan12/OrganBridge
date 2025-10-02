@@ -17,9 +17,9 @@ def register(request):
             
             # Redirect based on user type
             if user.is_donor():
-                return redirect('profiles:donor_dashboard')
+                return redirect('profiles:home')
             else:
-                return redirect('profiles:recipient_dashboard')
+                return redirect('profiles:home')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -44,9 +44,9 @@ def login_view(request):
                 if next_url:
                     return redirect(next_url)
                 elif user.is_donor():
-                    return redirect('profiles:donor_dashboard')
+                    return redirect('profiles:home')
                 else:
-                    return redirect('profiles:recipient_dashboard')
+                    return redirect('profiles:home')
             else:
                 messages.error(request, 'Invalid username or password.')
         else:

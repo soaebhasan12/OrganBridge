@@ -6,6 +6,72 @@ from accounts.models import CustomUser
 from .models import DonorProfile, RecipientProfile
 from .forms import DonorProfileForm, RecipientProfileForm
 
+
+
+def home(request):
+    """
+    Main landing page for OrganBridge - accessible to all users (logged in and anonymous)
+    """
+    # If user is authenticated, redirect to their appropriate dashboard
+    if request.user.is_authenticated:
+        return redirect('profiles:profile_dashboard')
+    
+    # Context data for the homepage
+    context = {
+        'title': 'OrganBridge - AI-Powered Organ Matching',
+        'description': 'Revolutionizing organ donation through intelligent matching and real-time communication',
+        'features': [
+            {
+                'icon': '🤖',
+                'title': 'AI-Powered Matching',
+                'description': 'Advanced ML algorithm analyzing 12+ factors for optimal compatibility'
+            },
+            {
+                'icon': '⚡',
+                'title': 'Real-time Communication',
+                'description': 'HTMX-powered live chat and notifications between donors and recipients'
+            },
+            {
+                'icon': '🗺️',
+                'title': 'Geographic Matching',
+                'description': 'Smart location-based matching to reduce transport time and costs'
+            },
+            {
+                'icon': '🫀',
+                'title': 'Multi-Organ Support',
+                'description': 'Comprehensive platform supporting kidney, liver, heart and more'
+            }
+        ],
+        'statistics': [
+            {'number': '900+', 'label': 'Successful Matches'},
+            {'number': '95%', 'label': 'Accuracy Rate'},
+            {'number': '3x', 'label': 'Faster Matching'},
+            {'number': '24/7', 'label': 'Platform Availability'}
+        ],
+        'ml_factors': [
+            'Blood Type', 'Age Compatibility', 'Geographic Distance', 'Medical History',
+            'Lifestyle Factors', 'Tissue Compatibility', 'Gender', 'Race', 'Smoke History',
+            'Drug History', 'Alcohol Consumption', 'Average Sleep'
+        ],
+        'technology_stack': [
+            {'name': 'Django', 'icon': '🐍', 'description': 'Backend Framework'},
+            {'name': 'Scikit-learn', 'icon': '🤖', 'description': 'ML Algorithm'},
+            {'name': 'HTMX', 'icon': '⚡', 'description': 'Real-time Features'},
+            {'name': 'Tailwind CSS', 'icon': '🎨', 'description': 'Modern UI'}
+        ]
+    }
+    
+    return render(request, 'profiles/home.html', context)
+
+
+@login_required
+def profile_home(request):
+    """
+    Legacy home view - redirects to profile_dashboard for backward compatibility
+    """
+    return redirect('profiles:profile_dashboard')
+
+
 @login_required
 def profile_dashboard(request):
     """User ka main dashboard based on their type"""
