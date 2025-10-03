@@ -1,63 +1,70 @@
 {% load static %}
 
 <!DOCTYPE html>
-{% comment %} <html lang="en" class="{% if request.session.dark_mode %}dark{% endif %}"> {% endcomment %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Peer Organ - Life Saving Connections{% endblock %}</title>
+    <title>{% block title %}OrganBridge - Life Saving Connections{% endblock %}</title>
     
-    <!-- 
-        HACKATHON COMMENT: 
-        We're using Tailwind CSS CDN for rapid prototyping.
-        In production, use built version for better performance.
-    -->
+    <!-- Professional Meta Tags -->
+    <meta name="description" content="OrganBridge - Advanced organ donor and recipient matching platform using AI technology to save lives">
+    <meta name="keywords" content="organ donation, transplant, donor, recipient, healthcare, AI matching">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- HTMX for AJAX interactions without JavaScript complexity -->
+    <!-- HTMX for AJAX interactions -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
     <!-- Alpine.js for client-side interactivity -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
+    <!-- Font Awesome for Professional Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Custom CSS -->
     <style>
-        /* Smooth transitions for theme toggle */
-        .theme-transition * {
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        /* Professional Animations */
+        @keyframes professionalFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        /* HTMX loading states */
-        .htmx-indicator {
-            opacity: 0;
-            transition: opacity 200ms ease-in;
-        }
-        .htmx-request .htmx-indicator {
-            opacity: 1;
-        }
-        .htmx-request.htmx-indicator {
-            opacity: 1;
+        .professional-fade-in {
+            animation: professionalFadeIn 0.6s ease-out;
         }
         
-        /* Custom scrollbar for dark mode */
-        .dark ::-webkit-scrollbar {
-            width: 8px;
+        /* Glass Morphism Effect */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .dark ::-webkit-scrollbar-track {
-            background: #1f2937;
+        
+        /* Professional Shadow */
+        .professional-shadow {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
         }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
+        
+        /* Gradient Border */
+        .gradient-border {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            padding: 1px;
+            border-radius: 12px;
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition: all 0.3s ease;
         }
     </style>
 
     {% block css_section %}
-       <link rel="stylesheet"  href='{% static "custom.css" %}' >
+       <link rel="stylesheet" href='{% static "custom.css" %}'>
     {% endblock css_section %}
     
-    <!-- Tailwind Config with Custom Colors -->
+    <!-- Tailwind Config with Professional Color Palette -->
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -72,13 +79,25 @@
                             700: '#0369a1',
                             900: '#0c4a6e',
                         },
-                        success: '#10b981',
-                        warning: '#f59e0b',
-                        danger: '#ef4444',
+                        medical: {
+                            green: '#10b981',
+                            red: '#ef4444',
+                            blue: '#3b82f6',
+                            amber: '#f59e0b'
+                        },
+                        professional: {
+                            navy: '#1e3a8a',
+                            slate: '#475569',
+                            gray: '#6b7280'
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
                     },
                     animation: {
                         'pulse-slow': 'pulse 3s linear infinite',
-                        'bounce-gentle': 'bounce 1s infinite',
+                        'bounce-subtle': 'bounce 2s infinite',
+                        'fade-in': 'professionalFadeIn 0.6s ease-out',
                     }
                 }
             }
@@ -86,229 +105,303 @@
     </script>
 </head>
 
-<body class="theme-transition bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col font-sans">
     
-    <!-- 🌟 NAVBAR COMPONENT -->
+    <!-- 🎯 PROFESSIONAL NAVBAR -->
     <!-- 
         HACKATHON COMMENT: 
-        This responsive navbar uses Alpine.js for mobile menu toggle
-        and theme switching. It's fully accessible and mobile-first.
+        Enhanced navbar with better user experience, professional styling,
+        and improved accessibility. Features include:
+        - Role-based navigation
+        - Professional badge system
+        - Enhanced dropdowns
+        - Better mobile experience
     -->
-    <nav class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50" 
+    <nav class="bg-white dark:bg-gray-800 professional-shadow sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700" 
          x-data="{ mobileMenuOpen: false, userDropdownOpen: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 
                 <!-- Logo and Brand -->
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 flex items-center">
-                        <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
-                            ❤️ Peer Organ
-                        </span>
-                        <span class="ml-2 px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full font-medium">
-                            Beta
-                        </span>
+                    <div class="flex-shrink-0 flex items-center space-x-3">
+                        <div class="gradient-border">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-1">
+                                <i class="fas fa-heartbeat text-xl text-transparent bg-gradient-to-r from-primary-600 to-medical-green bg-clip-text"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-medical-green bg-clip-text text-transparent">
+                                OrganBridge
+                            </span>
+                            <span class="ml-2 px-2 py-1 bg-medical-green text-white text-xs rounded-full font-medium">
+                                Life-Saving Platform
+                            </span>
+                        </div>
                     </div>
                     
                     <!-- Desktop Navigation -->
-                    <div class="hidden md:ml-6 md:flex md:items-center md:space-x-4">
-                        {% comment %} <a href="{% url 'profile_dashboard' %}"  {% endcomment %}
-
+                    <div class="hidden md:ml-8 md:flex md:items-center md:space-x-1">
                         <a href="{% url 'profiles:home' %}" 
-                           class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                            🏠 Home
+                        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2
+                                {% if request.resolver_match.url_name == 'home' %}bg-primary-50 text-primary-700 border border-primary-200{% else %}text-gray-800 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-700 dark:hover:text-primary-300{% endif %}">
+                            <i class="fas fa-home text-sm"></i>
+                            <span>Home</span>
                         </a>
 
-                        <a href="{% url 'profiles:profile_dashboard' %}" 
-                           class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                                  {% if request.resolver_match.url_name == 'profiles:profile_dashboard' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
-                            🏠 Dashboard
+                        {% if user.is_authenticated %}
+                        <!-- Role-Based Dashboard -->
+                        {% if user.donorprofile %}
+                        <a href="{% url 'profiles:donor_dashboard' %}" 
+                        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2
+                                {% if request.resolver_match.url_name == 'donor_dashboard' %}bg-green-50 text-green-700 border border-green-200{% else %}text-gray-800 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 hover:text-green-700 dark:hover:text-green-300{% endif %}">
+                            <i class="fas fa-hand-holding-medical text-sm"></i>
+                            <span>Donor Dashboard</span>
+                        </a>
+                        {% elif user.recipientprofile %}
+                        <a href="{% url 'profiles:recipient_dashboard' %}" 
+                        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2
+                                {% if request.resolver_match.url_name == 'recipient_dashboard' %}bg-primary-50 text-primary-700 border border-primary-200{% else %}text-gray-800 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-700 dark:hover:text-primary-300{% endif %}">
+                            <i class="fas fa-user-injured text-sm"></i>
+                            <span>Recipient Dashboard</span>
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Matches Section - Direct Links -->
+                        <a href="{% url 'matches:find_matches' %}" 
+                        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2
+                                {% if request.resolver_match.url_name == 'find_matches' %}bg-blue-50 text-blue-700 border border-blue-200{% else %}text-gray-800 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-700 dark:hover:text-blue-300{% endif %}">
+                            <i class="fas fa-search text-sm"></i>
+                            <span>Find Matches</span>
                         </a>
                         
-                        {% if user.is_authenticated %}
-                            {% if user.is_donor %}
-                                <a href="{% url 'matches:find_matches' %}" 
-                                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                                        {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
-                                    🔍 Find Recipients
-                                </a>
-                            {% elif user.is_recipient %}
-                                <a href="{% url 'matches:find_matches' %}" 
-                                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                                        {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
-                                    🔍 Find Donors
-                                </a>
+                        <a href="{% url 'matches:my_matches' %}" 
+                        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2
+                                {% if request.resolver_match.url_name == 'my_matches' %}bg-pink-50 text-pink-700 border border-pink-200{% else %}text-gray-800 dark:text-gray-200 hover:bg-pink-50 dark:hover:bg-gray-700 hover:text-pink-700 dark:hover:text-pink-300{% endif %}">
+                            <i class="fas fa-heart text-sm"></i>
+                            <span>My Matches</span>
+                            {% if user.unread_matches_count %}
+                            <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ user.unread_matches_count }}</span>
                             {% endif %}
-                            
-                            <a href="{% url 'matches:my_matches' %}" 
-                               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
-                                      {% if request.resolver_match.url_name == 'my_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
-                                💌 My Matches
-                            </a>
+                        </a>
+                        
+                        <a href="{% url 'matches:match_preferences' %}" 
+                        class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2
+                                {% if request.resolver_match.url_name == 'match_preferences' %}bg-purple-50 text-purple-700 border border-purple-200{% else %}text-gray-800 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-700 hover:text-purple-700 dark:hover:text-purple-300{% endif %}">
+                            <i class="fas fa-cog text-sm"></i>
+                            <span>Preferences</span>
+                        </a>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Right Side Items -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-3">
                     
                     <!-- Theme Toggle -->
-                    <!-- 
-                        HACKATHON COMMENT:
-                        This theme toggle uses Alpine.js and stores preference in sessionStorage.
-                        It's accessible and persists across page reloads.
-                    -->
                     <button @click="toggleTheme()" 
-                            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            aria-label="Toggle theme">
-                        <span x-show="!isDark()">🌙</span>
-                        <span x-show="isDark()">☀️</span>
+                            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors professional-fade-in"
+                            aria-label="Toggle theme"
+                            title="Toggle dark/light mode">
+                        <i class="fas fa-moon text-yellow-500 dark:hidden"></i>
+                        <i class="fas fa-sun text-yellow-400 hidden dark:inline"></i>
                     </button>
+
+                    <!-- Admin Access for Staff -->
+                    {% if user.is_authenticated and user.is_staff %}
+                    <a href="{% url 'admin:index' %}" 
+                       class="p-2 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors professional-fade-in"
+                       title="Admin Dashboard">
+                        <i class="fas fa-cog"></i>
+                    </a>
+                    {% endif %}
 
                     <!-- User Menu -->
                     {% if user.is_authenticated %}
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" 
-                                class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                            <div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                class="flex items-center space-x-3 p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors professional-fade-in border border-gray-200 dark:border-gray-600 hover:border-primary-200 dark:hover:border-primary-800">
+                            <div class="w-8 h-8 bg-gradient-to-r from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                                 {{ user.username|first|upper }}
                             </div>
-                            <span class="hidden md:block text-sm font-medium">{{ user.username }}</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ user.username }}</div>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    {% if user.donorprofile %}Donor{% elif user.recipientprofile %}Recipient{% else %}User{% endif %}
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-600 dark:text-gray-400 transition-transform duration-200" :class="{'rotate-180': open}"></i>
                         </button>
 
-                        <!-- Dropdown Menu -->
+                        <!-- Enhanced Dropdown Menu -->
                         <div x-show="open" 
-                             @click.outside="open = false"
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-75"
-                             x-transition:leave-start="transform opacity-100 scale-100"
-                             x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
+                            @click.outside="open = false"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 transform -translate-y-2"
+                            x-transition:enter-end="opacity-100 transform translate-y-0"
+                            class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl professional-shadow border border-gray-200 dark:border-gray-700 py-2 z-50">
                             
+                            <!-- User Info -->
+                            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+                                <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ user.get_full_name|default:user.username }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ user.email }}</div>
+                            </div>
+                            
+                            <!-- Menu Items -->
                             <a href="{% url 'profiles:profile_dashboard' %}" 
-                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                👤 My Profile
+                            class="flex items-center space-x-3 px-4 py-3 text-sm text-gray-800 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                                <i class="fas fa-user-circle text-primary-600 w-5"></i>
+                                <span>My Profile</span>
                             </a>
                             
                             <a href="{% url 'accounts:account' %}" 
-                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                ⚙️ Settings
+                            class="flex items-center space-x-3 px-4 py-3 text-sm text-gray-800 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-gray-700 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
+                                <i class="fas fa-cog text-purple-600 w-5"></i>
+                                <span>Account Settings</span>
                             </a>
                             
-                            <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                            <a href="{% url 'profiles:public_profile' user.id %}" 
+                            class="flex items-center space-x-3 px-4 py-3 text-sm text-gray-800 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                                <i class="fas fa-eye text-blue-500 w-5"></i>
+                                <span>Public Profile</span>
+                            </a>
+
+                            <!-- Admin Only Links -->
+                            {% if user.is_staff %}
+                            <div class="border-t border-gray-200 dark:border-gray-600 my-2"></div>
+                            <a href="{% url 'admin:index' %}" 
+                            class="flex items-center space-x-3 px-4 py-3 text-sm text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-shield-alt text-amber-600 w-5"></i>
+                                <span>Admin Panel</span>
+                            </a>
+                            
+                            <a href="{% url 'ml_model:model_status' %}" 
+                            class="flex items-center space-x-3 px-4 py-3 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-brain text-indigo-600 w-5"></i>
+                                <span>ML Models</span>
+                            </a>
+                            {% endif %}
+                            
+                            <div class="border-t border-gray-200 dark:border-gray-600 my-2"></div>
                             
                             <a href="{% url 'accounts:logout' %}" 
-                               class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                🚪 Logout
+                            class="flex items-center space-x-3 px-4 py-3 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-sign-out-alt text-red-600 w-5"></i>
+                                <span>Logout</span>
                             </a>
                         </div>
                     </div>
                     {% else %}
-                    <div class="flex space-x-2">
+                    <!-- Authentication Buttons -->
+                    <div class="flex items-center space-x-3 professional-fade-in">
                         <a href="{% url 'accounts:login' %}" 
-                           class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 transition-colors">
-                            Login
+                           class="px-4 py-2 text-sm font-semibold text-professional-slate hover:text-primary-600 transition-colors">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
                         </a>
                         <a href="{% url 'accounts:register' %}" 
-                           class="px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors">
-                            Sign Up
+                           class="px-6 py-2 bg-gradient-to-r from-primary-500 to-medical-green text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all duration-200 professional-fade-in">
+                            <i class="fas fa-user-plus mr-2"></i>Get Started
                         </a>
                     </div>
                     {% endif %}
 
                     <!-- Mobile menu button -->
                     <button @click="mobileMenuOpen = !mobileMenuOpen" 
-                            class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors professional-fade-in"
                             aria-label="Toggle menu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                            <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                        <i class="fas fa-bars" x-show="!mobileMenuOpen"></i>
+                        <i class="fas fa-times" x-show="mobileMenuOpen"></i>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Mobile Menu -->
+        <!-- Enhanced Mobile Menu -->
         <div x-show="mobileMenuOpen" 
-             x-transition:enter="transition ease-out duration-100"
-             x-transition:enter-start="transform opacity-0 scale-95"
-             x-transition:enter-end="transform opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-75"
-             x-transition:leave-start="transform opacity-100 scale-100"
-             x-transition:leave-end="transform opacity-0 scale-95"
-             class="md:hidden border-t border-gray-200 dark:border-gray-700">
-            <div class="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-800">
-                {% comment %} <a href="{% url 'profile_dashboard' %}"  {% endcomment %}
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform -translate-y-4"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform -translate-y-4"
+             class="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 professional-shadow">
+            <div class="px-4 pt-3 pb-6 space-y-1">
                 <a href="{% url 'profiles:home' %}" 
-                   class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
-                    🏠 Home
+                   class="flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-home text-primary-600 w-6"></i>
+                    <span>Home</span>
                 </a>
 
-                <a href="{% url 'profiles:profile_dashboard' %}" 
-                   class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
-                    🏠 Dashboard
-                </a>
-                
                 {% if user.is_authenticated %}
-                    {% if user.is_donor %}
-                        <a href="{% url 'matches:find_matches' %}" 
-                           class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
-                            🔍 Find Recipients
-                        </a>
-                    {% else %}
-                        <a href="{% url 'matches:find_matches' %}" 
-                           class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
-                            🔍 Find Donors
-                        </a>
-                    {% endif %}
+                <!-- Role-Based Mobile Navigation -->
+                {% if user.donorprofile %}
+                <a href="{% url 'profiles:donor_dashboard' %}" 
+                   class="flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-hand-holding-medical text-medical-green w-6"></i>
+                    <span>Donor Dashboard</span>
+                </a>
+                {% elif user.recipientprofile %}
+                <a href="{% url 'profiles:recipient_dashboard' %}" 
+                   class="flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-user-injured text-primary-600 w-6"></i>
+                    <span>Recipient Dashboard</span>
+                </a>
+                {% endif %}
+                
+                <!-- Mobile Matches Section -->
+                <div class="border-t border-gray-200 dark:border-gray-600 pt-3 mt-3">
+                    <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Matches</div>
+                    
+                    <a href="{% url 'matches:find_matches' %}" 
+                    class="flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-search text-primary-600 w-6"></i>
+                        <span>Find Matches</span>
+                    </a>
                     
                     <a href="{% url 'matches:my_matches' %}" 
-                       class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
-                        💌 My Matches
+                    class="flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-heart text-red-500 w-6"></i>
+                        <span>My Matches</span>
                     </a>
+                    
+                    <a href="{% url 'matches:match_preferences' %}" 
+                    class="flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-cog text-gray-500 w-6"></i>
+                        <span>Preferences</span>
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
     </nav>
 
-    <!-- 📱 FLASH MESSAGES -->
-    <!-- 
-        HACKATHON COMMENT:
-        This messages component uses HTMX for automatic dismissal
-        and provides visual feedback for user actions.
-    -->
+    <!-- 📱 ENHANCED FLASH MESSAGES -->
     {% if messages %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 professional-fade-in">
         {% for message in messages %}
-        <div class="alert p-4 rounded-lg mb-3 border-l-4 
-                   {% if message.tags == 'success' %}bg-green-50 border-green-500 text-green-700
-                   {% elif message.tags == 'error' %}bg-red-50 border-red-500 text-red-700
-                   {% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-500 text-yellow-700
-                   {% else %}bg-blue-50 border-blue-500 text-blue-700{% endif %}"
-             _="on load wait 5s then remove me">
+        <div class="alert p-4 rounded-xl mb-3 border-l-4 professional-shadow
+                   {% if message.tags == 'success' %}bg-green-50 border-green-500 text-green-800
+                   {% elif message.tags == 'error' %}bg-red-50 border-red-500 text-red-800
+                   {% elif message.tags == 'warning' %}bg-amber-50 border-amber-500 text-amber-800
+                   {% else %}bg-blue-50 border-blue-500 text-blue-800{% endif %}"
+             _="on load wait 5s then transition opacity to 0 over 0.5s then remove me">
             
             <div class="flex items-center justify-between">
-                <div class="flex items-center">
+                <div class="flex items-center space-x-3">
                     {% if message.tags == 'success' %}
-                        <span class="text-lg">✅</span>
+                        <i class="fas fa-check-circle text-green-500 text-lg"></i>
                     {% elif message.tags == 'error' %}
-                        <span class="text-lg">❌</span>
+                        <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
                     {% elif message.tags == 'warning' %}
-                        <span class="text-lg">⚠️</span>
+                        <i class="fas fa-exclamation-triangle text-amber-500 text-lg"></i>
                     {% else %}
-                        <span class="text-lg">ℹ️</span>
+                        <i class="fas fa-info-circle text-blue-500 text-lg"></i>
                     {% endif %}
-                    <span class="ml-3 font-medium">{{ message }}</span>
+                    <span class="font-semibold">{{ message }}</span>
                 </div>
-                <button onclick="this.parentElement.parentElement.remove()" 
-                        class="ml-auto text-xl font-bold hover:opacity-70">
-                    ×
+                <button onclick="this.parentElement.parentElement.style.opacity = '0'; setTimeout(() => this.parentElement.parentElement.remove(), 500)" 
+                        class="ml-4 text-gray-500 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
@@ -316,107 +409,186 @@
     </div>
     {% endif %}
 
+
+
+
+
+
     <!-- 🎯 MAIN CONTENT -->
-    <main class="flex-grow">
+    <main class="flex-grow professional-fade-in">
         {% block content %}
-        <!-- 
-            HACKATHON COMMENT:
-            Child templates will inject their content here.
-            This provides consistent layout across all pages.
-        -->
+        <!-- Main content injected here -->
         {% endblock %}
     </main>
 
-    <!-- 👣 FOOTER COMPONENT -->
+
+
+
+
+
+
+    <!-- 👣 PROFESSIONAL FOOTER -->
     <!-- 
-        HACKATHON COMMENT:
-        This footer is responsive and provides important links
-        while maintaining the overall design aesthetic.
+        HACKATHON COMMENT: 
+        Enhanced footer with comprehensive information,
+        organized sections, and professional styling.
+        Features:
+        - Multi-column responsive layout
+        - Contact information
+        - Social media links
+        - Legal and support links
     -->
-    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-16 professional-shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
                 
-                <!-- Brand Section -->
-                <div class="md:col-span-2">
-                    <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
-                        ❤️ Peer Organ
-                    </span>
-                    <p class="mt-2 text-gray-600 dark:text-gray-400 max-w-md">
-                        Connecting organ donors with recipients through intelligent matching technology. 
-                        Saving lives, one connection at a time.
+                <!-- Brand & Mission -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="gradient-border">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-1">
+                                <i class="fas fa-heartbeat text-xl text-transparent bg-gradient-to-r from-primary-600 to-medical-green bg-clip-text"></i>
+                            </div>
+                        </div>
+                        <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-medical-green bg-clip-text text-transparent">
+                            OrganBridge
+                        </span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 text-lg leading-relaxed mb-6 max-w-2xl">
+                        Revolutionizing organ transplantation through advanced AI-powered matching technology. 
+                        We connect donors and recipients with precision, compassion, and efficiency to save lives.
                     </p>
-                    <div class="mt-4 flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
-                            <span class="sr-only">Twitter</span>
-                            🐦
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors transform hover:scale-110" title="Twitter">
+                            <i class="fab fa-twitter text-xl"></i>
                         </a>
-                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
-                            <span class="sr-only">GitHub</span>
-                            💻
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors transform hover:scale-110" title="LinkedIn">
+                            <i class="fab fa-linkedin text-xl"></i>
                         </a>
-                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
-                            <span class="sr-only">LinkedIn</span>
-                            💼
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors transform hover:scale-110" title="GitHub">
+                            <i class="fab fa-github text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors transform hover:scale-110" title="Facebook">
+                            <i class="fab fa-facebook text-xl"></i>
                         </a>
                     </div>
                 </div>
 
                 <!-- Quick Links -->
                 <div>
-                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                        <i class="fas fa-link text-primary-600 mr-2"></i>
                         Quick Links
                     </h3>
-                    <ul class="mt-4 space-y-2">
-                        {% comment %} <li><a href="{% url 'profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Dashboard</a></li> {% endcomment %}
-                        <li><a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Dashboard</a></li>
-                        <li><a href="{% url 'matches:find_matches' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Find Matches</a></li>
-                        <li><a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">My Profile</a></li>
-                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Help Center</a></li>
+                    <ul class="space-y-3">
+                        <li>
+                            <a href="{% url 'profiles:home' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors flex items-center group">
+                                <i class="fas fa-chevron-right text-xs text-primary-500 mr-2 group-hover:translate-x-1 transition-transform"></i>
+                                Home
+                            </a>
+                        </li>
+                        {% if user.is_authenticated %}
+                        <li>
+                            <a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors flex items-center group">
+                                <i class="fas fa-chevron-right text-xs text-primary-500 mr-2 group-hover:translate-x-1 transition-transform"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'matches:find_matches' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors flex items-center group">
+                                <i class="fas fa-chevron-right text-xs text-primary-500 mr-2 group-hover:translate-x-1 transition-transform"></i>
+                                Find Matches
+                            </a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <a href="{% url 'accounts:login' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors flex items-center group">
+                                <i class="fas fa-chevron-right text-xs text-primary-500 mr-2 group-hover:translate-x-1 transition-transform"></i>
+                                Login
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'accounts:register' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors flex items-center group">
+                                <i class="fas fa-chevron-right text-xs text-primary-500 mr-2 group-hover:translate-x-1 transition-transform"></i>
+                                Register
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </div>
 
-                <!-- Legal -->
+                <!-- Contact & Support -->
                 <div>
-                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                        Legal
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                        <i class="fas fa-headset text-medical-green mr-2"></i>
+                        Support
                     </h3>
-                    <ul class="mt-4 space-y-2">
-                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Terms of Service</a></li>
-                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Cookie Policy</a></li>
+                    <ul class="space-y-4">
+                        <li class="flex items-start space-x-3">
+                            <i class="fas fa-envelope text-primary-600 mt-1"></i>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">Email</div>
+                                <div class="text-gray-600 dark:text-gray-400 text-sm">support@organbridge.org</div>
+                            </div>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                            <i class="fas fa-phone text-primary-600 mt-1"></i>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">Phone</div>
+                                <div class="text-gray-600 dark:text-gray-400 text-sm">+1 (555) 123-HELP</div>
+                            </div>
+                        </li>
+                        <li class="flex items-start space-x-3">
+                            <i class="fas fa-clock text-primary-600 mt-1"></i>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">Hours</div>
+                                <div class="text-gray-600 dark:text-gray-400 text-sm">24/7 Emergency Support</div>
+                            </div>
+                        </li>
                     </ul>
                 </div>
             </div>
             
             <!-- Bottom Bar -->
-            <div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-500 dark:text-gray-400 text-sm">
-                    &copy; 2024 Peer Organ. All rights reserved.
-                </p>
-                <p class="mt-2 md:mt-0 text-gray-500 dark:text-gray-400 text-sm">
-                    Made with ❤️ for saving lives
-                </p>
+            <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                    <div class="flex items-center space-x-6 text-sm">
+                        <p class="text-gray-500 dark:text-gray-400">
+                            &copy; 2024 OrganBridge. Saving lives through technology.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors text-sm">Privacy</a>
+                            <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors text-sm">Terms</a>
+                            <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors text-sm">Cookies</a>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-heart text-medical-red"></i>
+                        <span>Made with compassion for humanity</span>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
 
-    <!-- 🎛️ JAVASCRIPT FUNCTIONALITY -->
+    <!-- 🎛️ ENHANCED JAVASCRIPT FUNCTIONALITY -->
     <script>
-        // Theme Management
+        // Professional Theme Management
         function getTheme() {
-            // Check sessionStorage first, then system preference
-            return sessionStorage.getItem('theme') || 
-                   (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            const savedTheme = localStorage.getItem('organbridge-theme');
+            if (savedTheme) return savedTheme;
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
 
         function setTheme(theme) {
-            sessionStorage.setItem('theme', theme);
+            localStorage.setItem('organbridge-theme', theme);
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
             }
+            // Dispatch event for other components
+            window.dispatchEvent(new CustomEvent('themeChange', { detail: theme }));
         }
 
         function toggleTheme() {
@@ -424,7 +596,7 @@
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
         }
 
-        // Alpine.js functions
+        // Alpine.js initialization
         document.addEventListener('alpine:init', () => {
             Alpine.data('theme', () => ({
                 isDark() {
@@ -436,29 +608,34 @@
             }));
         });
 
-        // Initialize theme on page load
+        // Initialize theme
         setTheme(getTheme());
 
-        // HTMX Configuration
+        // Professional console message
+        console.log(`
+        🏥 OrganBridge - Professional Organ Matching Platform
+        🚀 Version: 2.0.0
+        💡 Features: AI Matching, Professional UI/UX
+        📧 Support: support@organbridge.org
+        `);
+
+        // Enhanced HTMX configuration
         document.body.addEventListener('htmx:beforeRequest', function(evt) {
-            // Show loading states
-            console.log('HTMX request started:', evt.detail.pathInfo);
+            // Add professional loading states
+            const target = evt.detail.elt;
+            target.classList.add('opacity-75', 'pointer-events-none');
         });
 
         document.body.addEventListener('htmx:afterRequest', function(evt) {
-            // Handle completion
-            console.log('HTMX request completed');
+            // Remove loading states
+            const target = evt.detail.elt;
+            target.classList.remove('opacity-75', 'pointer-events-none');
         });
 
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
-                }
-            });
+        // Professional error handling
+        window.addEventListener('error', function(e) {
+            console.error('OrganBridge Error:', e.error);
+            // You could send this to your error tracking service
         });
     </script>
 
@@ -467,33 +644,3 @@
     {% endblock %}
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-{% comment %} 
-
-now write the reciepient_dashboard.html
-dont forget about frontend stack. (i giving you model_status.html for refernce to write donor_dashboard.html
-). 
-
-now write reciepient_dashboard.html using views.py which should work properly as our views.py. don't forget about our frontend stack, which you use in model_status.html and train_model.html . 
-
-page must be looks professional. as previous pages.
-
-add hackathon question related to this page in the model_stats.html, as a comment which interviewee can ask.
-
-clear the why, where and how related to this file, as a comment in this files.
-
-do this approach in every chat solution.
-
-also clear WHY/WHERE/HOW about the files. summarize not muxh big, because we have to answer to the interviewee
-
-{% endcomment %}

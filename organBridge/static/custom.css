@@ -1,63 +1,176 @@
+/* static/custom.css */
 /* 
    HACKATHON COMMENT:
-   This file contains additional custom styles beyond Tailwind.
-   It's loaded after Tailwind for specific overrides.
+   Enhanced professional styling with medical-themed design system
+   WHY: Create consistent, accessible, professional healthcare UI
+   WHERE: Used across all templates for brand consistency
+   HOW: CSS custom properties, professional animations, medical color palette
 */
 
-/* Custom animations */
-@keyframes fadeInUp {
+:root {
+    --medical-primary: #0ea5e9;
+    --medical-success: #10b981;
+    --medical-warning: #f59e0b;
+    --medical-danger: #ef4444;
+    --professional-navy: #1e3a8a;
+    --professional-slate: #475569;
+}
+
+/* Professional Animations */
+@keyframes professionalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(30px) scale(0.95);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
-.fade-in-up {
-    animation: fadeInUp 0.6s ease-out;
+@keyframes pulseProfessional {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
 }
 
-/* Gradient text effects */
-.gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.professional-slide-in {
+    animation: professionalSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* Custom button styles */
-.btn-primary {
-    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+.pulse-professional {
+    animation: pulseProfessional 2s ease-in-out infinite;
 }
 
-.btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+/* Medical Status Indicators */
+.status-indicator {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
 }
 
-/* Card hover effects */
-.card-hover {
-    transition: all 0.3s ease;
+.status-active {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
 }
 
-.card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+.status-pending {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
 }
 
-/* Loading spinner */
-.loading-spinner {
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #3498db;
+.status-inactive {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+}
+
+/* Professional Card Styles */
+.professional-card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.professional-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Medical Priority Badges */
+.priority-high {
+    @apply bg-red-500 text-white;
+}
+
+.priority-medium {
+    @apply bg-yellow-500 text-white;
+}
+
+.priority-low {
+    @apply bg-green-500 text-white;
+}
+
+/* Professional Loading States */
+.loading-professional {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(14, 165, 233, 0.3);
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    animation: spin 1s linear infinite;
+    border-top-color: var(--medical-primary);
+    animation: spin 1s ease-in-out infinite;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* Enhanced Button Styles */
+.btn-medical-primary {
+    @apply bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl;
+}
+
+.btn-medical-success {
+    @apply bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl;
+}
+
+/* Professional Data Visualization */
+.data-card {
+    @apply professional-card p-6 text-center;
+}
+
+.data-value {
+    @apply text-3xl font-bold text-gray-900 dark:text-white;
+}
+
+.data-label {
+    @apply text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-2;
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus styles for accessibility */
+.focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .professional-card {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+    }
+}
+
+/* Custom scrollbar for professional feel */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
 }

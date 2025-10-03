@@ -1,0 +1,499 @@
+{% load static %}
+
+<!DOCTYPE html>
+{% comment %} <html lang="en" class="{% if request.session.dark_mode %}dark{% endif %}"> {% endcomment %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Peer Organ - Life Saving Connections{% endblock %}</title>
+    
+    <!-- 
+        HACKATHON COMMENT: 
+        We're using Tailwind CSS CDN for rapid prototyping.
+        In production, use built version for better performance.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- HTMX for AJAX interactions without JavaScript complexity -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Alpine.js for client-side interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        /* Smooth transitions for theme toggle */
+        .theme-transition * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* HTMX loading states */
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in;
+        }
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
+        
+        /* Custom scrollbar for dark mode */
+        .dark ::-webkit-scrollbar {
+            width: 8px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+    </style>
+
+    {% block css_section %}
+       <link rel="stylesheet"  href='{% static "custom.css" %}' >
+    {% endblock css_section %}
+    
+    <!-- Tailwind Config with Custom Colors -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        },
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s linear infinite',
+                        'bounce-gentle': 'bounce 1s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="theme-transition bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    
+    <!-- 🌟 NAVBAR COMPONENT -->
+    <!-- 
+        HACKATHON COMMENT: 
+        This responsive navbar uses Alpine.js for mobile menu toggle
+        and theme switching. It's fully accessible and mobile-first.
+    -->
+    <nav class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50" 
+         x-data="{ mobileMenuOpen: false, userDropdownOpen: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                
+                <!-- Logo and Brand -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
+                            ❤️ Peer Organ
+                        </span>
+                        <span class="ml-2 px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full font-medium">
+                            Beta
+                        </span>
+                    </div>
+                    
+                    <!-- Desktop Navigation -->
+                    <div class="hidden md:ml-6 md:flex md:items-center md:space-x-4">
+                        {% comment %} <a href="{% url 'profile_dashboard' %}"  {% endcomment %}
+
+                        <a href="{% url 'profiles:home' %}" 
+                           class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            🏠 Home
+                        </a>
+
+                        <a href="{% url 'profiles:profile_dashboard' %}" 
+                           class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                                  {% if request.resolver_match.url_name == 'profiles:profile_dashboard' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                            🏠 Dashboard
+                        </a>
+                        
+                        {% if user.is_authenticated %}
+                            {% if user.is_donor %}
+                                <a href="{% url 'matches:find_matches' %}" 
+                                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                                        {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                                    🔍 Find Recipients
+                                </a>
+                            {% elif user.is_recipient %}
+                                <a href="{% url 'matches:find_matches' %}" 
+                                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                                        {% if request.resolver_match.url_name == 'find_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                                    🔍 Find Donors
+                                </a>
+                            {% endif %}
+                            
+                            <a href="{% url 'matches:my_matches' %}" 
+                               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                                      {% if request.resolver_match.url_name == 'my_matches' %}text-primary-600 bg-primary-50{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                                💌 My Matches
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Right Side Items -->
+                <div class="flex items-center space-x-4">
+                    
+                    <!-- Theme Toggle -->
+                    <!-- 
+                        HACKATHON COMMENT:
+                        This theme toggle uses Alpine.js and stores preference in sessionStorage.
+                        It's accessible and persists across page reloads.
+                    -->
+                    <button @click="toggleTheme()" 
+                            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            aria-label="Toggle theme">
+                        <span x-show="!isDark()">🌙</span>
+                        <span x-show="isDark()">☀️</span>
+                    </button>
+
+                    <!-- User Menu -->
+                    {% if user.is_authenticated %}
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" 
+                                class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                {{ user.username|first|upper }}
+                            </div>
+                            <span class="hidden md:block text-sm font-medium">{{ user.username }}</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div x-show="open" 
+                             @click.outside="open = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
+                            
+                            <a href="{% url 'profiles:profile_dashboard' %}" 
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                👤 My Profile
+                            </a>
+                            
+                            <a href="{% url 'accounts:account' %}" 
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                ⚙️ Settings
+                            </a>
+                            
+                            <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                            
+                            <a href="{% url 'accounts:logout' %}" 
+                               class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                🚪 Logout
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex space-x-2">
+                        <a href="{% url 'accounts:login' %}" 
+                           class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 transition-colors">
+                            Login
+                        </a>
+                        <a href="{% url 'accounts:register' %}" 
+                           class="px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors">
+                            Sign Up
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Mobile menu button -->
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" 
+                            class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            aria-label="Toggle menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="transform opacity-0 scale-95"
+             x-transition:enter-end="transform opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-75"
+             x-transition:leave-start="transform opacity-100 scale-100"
+             x-transition:leave-end="transform opacity-0 scale-95"
+             class="md:hidden border-t border-gray-200 dark:border-gray-700">
+            <div class="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-800">
+                {% comment %} <a href="{% url 'profile_dashboard' %}"  {% endcomment %}
+                <a href="{% url 'profiles:home' %}" 
+                   class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
+                    🏠 Home
+                </a>
+
+                <a href="{% url 'profiles:profile_dashboard' %}" 
+                   class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
+                    🏠 Dashboard
+                </a>
+                
+                {% if user.is_authenticated %}
+                    {% if user.is_donor %}
+                        <a href="{% url 'matches:find_matches' %}" 
+                           class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
+                            🔍 Find Recipients
+                        </a>
+                    {% else %}
+                        <a href="{% url 'matches:find_matches' %}" 
+                           class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
+                            🔍 Find Donors
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'matches:my_matches' %}" 
+                       class="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
+                        💌 My Matches
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- 📱 FLASH MESSAGES -->
+    <!-- 
+        HACKATHON COMMENT:
+        This messages component uses HTMX for automatic dismissal
+        and provides visual feedback for user actions.
+    -->
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        {% for message in messages %}
+        <div class="alert p-4 rounded-lg mb-3 border-l-4 
+                   {% if message.tags == 'success' %}bg-green-50 border-green-500 text-green-700
+                   {% elif message.tags == 'error' %}bg-red-50 border-red-500 text-red-700
+                   {% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-500 text-yellow-700
+                   {% else %}bg-blue-50 border-blue-500 text-blue-700{% endif %}"
+             _="on load wait 5s then remove me">
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    {% if message.tags == 'success' %}
+                        <span class="text-lg">✅</span>
+                    {% elif message.tags == 'error' %}
+                        <span class="text-lg">❌</span>
+                    {% elif message.tags == 'warning' %}
+                        <span class="text-lg">⚠️</span>
+                    {% else %}
+                        <span class="text-lg">ℹ️</span>
+                    {% endif %}
+                    <span class="ml-3 font-medium">{{ message }}</span>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" 
+                        class="ml-auto text-xl font-bold hover:opacity-70">
+                    ×
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 🎯 MAIN CONTENT -->
+    <main class="flex-grow">
+        {% block content %}
+        <!-- 
+            HACKATHON COMMENT:
+            Child templates will inject their content here.
+            This provides consistent layout across all pages.
+        -->
+        {% endblock %}
+    </main>
+
+    <!-- 👣 FOOTER COMPONENT -->
+    <!-- 
+        HACKATHON COMMENT:
+        This footer is responsive and provides important links
+        while maintaining the overall design aesthetic.
+    -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                
+                <!-- Brand Section -->
+                <div class="md:col-span-2">
+                    <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
+                        ❤️ Peer Organ
+                    </span>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400 max-w-md">
+                        Connecting organ donors with recipients through intelligent matching technology. 
+                        Saving lives, one connection at a time.
+                    </p>
+                    <div class="mt-4 flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                            <span class="sr-only">Twitter</span>
+                            🐦
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                            <span class="sr-only">GitHub</span>
+                            💻
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                            <span class="sr-only">LinkedIn</span>
+                            💼
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Quick Links
+                    </h3>
+                    <ul class="mt-4 space-y-2">
+                        {% comment %} <li><a href="{% url 'profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Dashboard</a></li> {% endcomment %}
+                        <li><a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Dashboard</a></li>
+                        <li><a href="{% url 'matches:find_matches' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Find Matches</a></li>
+                        <li><a href="{% url 'profiles:profile_dashboard' %}" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">My Profile</a></li>
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Help Center</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Legal
+                    </h3>
+                    <ul class="mt-4 space-y-2">
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Bottom Bar -->
+            <div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 dark:text-gray-400 text-sm">
+                    &copy; 2024 Peer Organ. All rights reserved.
+                </p>
+                <p class="mt-2 md:mt-0 text-gray-500 dark:text-gray-400 text-sm">
+                    Made with ❤️ for saving lives
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 🎛️ JAVASCRIPT FUNCTIONALITY -->
+    <script>
+        // Theme Management
+        function getTheme() {
+            // Check sessionStorage first, then system preference
+            return sessionStorage.getItem('theme') || 
+                   (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        }
+
+        function setTheme(theme) {
+            sessionStorage.setItem('theme', theme);
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = getTheme();
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        }
+
+        // Alpine.js functions
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('theme', () => ({
+                isDark() {
+                    return getTheme() === 'dark';
+                },
+                toggleTheme() {
+                    toggleTheme();
+                }
+            }));
+        });
+
+        // Initialize theme on page load
+        setTheme(getTheme());
+
+        // HTMX Configuration
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            // Show loading states
+            console.log('HTMX request started:', evt.detail.pathInfo);
+        });
+
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            // Handle completion
+            console.log('HTMX request completed');
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+
+    <!-- Additional block for page-specific JavaScript -->
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} 
+
+now write the reciepient_dashboard.html
+dont forget about frontend stack. (i giving you model_status.html for refernce to write donor_dashboard.html
+). 
+
+now write reciepient_dashboard.html using views.py which should work properly as our views.py. don't forget about our frontend stack, which you use in model_status.html and train_model.html . 
+
+page must be looks professional. as previous pages.
+
+add hackathon question related to this page in the model_stats.html, as a comment which interviewee can ask.
+
+clear the why, where and how related to this file, as a comment in this files.
+
+do this approach in every chat solution.
+
+also clear WHY/WHERE/HOW about the files. summarize not muxh big, because we have to answer to the interviewee
+
+{% endcomment %}
