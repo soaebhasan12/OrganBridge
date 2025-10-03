@@ -1,28 +1,13 @@
-"""
-URL configuration for organBridge project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin
+# organBridge/urls.py
 from django.urls import path, include
+from django.contrib import admin
+from profiles.views import home  # Import your home view
 
 urlpatterns = [
-    path('', include('profiles.urls')),
-    path('accounts/', include('accounts.urls'), name='accounts'),
-    path('match/', include('matches.urls'), name='matches'),
-    path('ml_model/', include('ml_model.urls'), name='ml_model'),
     path('admin/', admin.site.urls),
-
-    # path('accounts/', include('django.contrib.auth.urls')),
+    path('', home, name='home'),  # Direct home view
+    path('profiles/', include('profiles.urls', namespace='profiles')),
+    path('accounts/', include('accounts.urls')),
+    path('matches/', include('matches.urls')),
+    path('ml_model/', include('ml_model.urls')),
 ]

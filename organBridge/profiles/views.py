@@ -13,8 +13,8 @@ def home(request):
     Main landing page for OrganBridge - accessible to all users (logged in and anonymous)
     """
     # If user is authenticated, redirect to their appropriate dashboard
-    if request.user.is_authenticated:
-        return redirect('profiles:profile_dashboard')
+    # if request.user.is_authenticated:
+    #     return redirect('profiles:home')
     
     # Context data for the homepage
     context = {
