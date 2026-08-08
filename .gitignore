@@ -21,8 +21,10 @@ db.sqlite3-journal
 .env.*
 *.env
 
+
 # Virtual environment
 venv/
+.venv
 
 # VS Code / IDE settings
 .vscode/
