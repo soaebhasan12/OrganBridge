@@ -1,4 +1,5 @@
 import json
+from codecs import BOM_UTF16_LE, BOM_UTF16_BE, BOM_UTF8
 from pathlib import Path
 
 from django.conf import settings
@@ -30,8 +31,7 @@ class Command(BaseCommand):
         if not fixture_path.exists():
             raise CommandError(f"Fixture file not found: {fixture_path}")
 
-        with fixture_path.open("r", encoding="utf-8") as f:
-            objects = json.load(f)
+        objects = load_fixture_json(fixture_path)
 
         created_users = 0
         created_donor_profiles = 0
@@ -136,3 +136,16 @@ def fields_remap(fields, excluded_keys):
         if key not in excluded_keys:
             remapped[key] = value
     return remapped
+
+
+def load_fixture_json(fixture_path):
+    raw = fixture_path.read_bytes()
+
+    if raw.startswith(BOM_UTF16_LE) or raw.startswith(BOM_UTF16_BE):
+        text = raw.decode("utf-16")
+    elif raw.startswith(BOM_UTF8):
+        text = raw.decode("utf-8-sig")
+    else:
+        text = raw.decode("utf-8")
+
+    return json.loads(text)
