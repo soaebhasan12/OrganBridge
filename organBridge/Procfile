@@ -1,1 +1,1 @@
-web: gunicorn organBridge.wsgi --log-file -
+web: gunicorn organBridge.wsgi:application --log-file -
