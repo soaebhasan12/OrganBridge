@@ -163,7 +163,7 @@ organBridge/
 | Bias Detection | Fairlearn |
 | Frontend | Tailwind CSS, HTMX, Alpine.js |
 | Database | SQLite (dev) → PostgreSQL (prod) |
-| Google AI | Gemini API *(coming soon)* |
+| Google AI | Gemini API |
 | Deployment | Railway / Google Cloud Run *(coming soon)* |
 
 ---
