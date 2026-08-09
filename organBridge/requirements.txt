@@ -1,6 +1,6 @@
 Django==5.2.1
 gunicorn
-jazzmin
+django-jazzmin
 scikit-learn
 numpy
 pandas
