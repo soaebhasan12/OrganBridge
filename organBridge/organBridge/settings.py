@@ -13,6 +13,7 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -29,6 +30,26 @@ INSTALLED_APPS = [
     'ml_model',
     'bias_dashboard',
 ]
+
+JAZZMIN_SETTINGS = {
+    'site_title': 'OrganBridge Admin',
+    'site_header': 'OrganBridge',
+    'site_brand': 'OrganBridge',
+    'welcome_sign': 'Welcome to OrganBridge Admin',
+    'copyright': 'OrganBridge',
+    'show_sidebar': True,
+    'navigation_expanded': True,
+    'order_with_respect_to': ['accounts', 'profiles', 'matches', 'bias_dashboard', 'ml_model'],
+    'icons': {
+        'auth.user': 'fas fa-user',
+        'accounts.customuser': 'fas fa-user-md',
+        'profiles.donorprofile': 'fas fa-hand-holding-heart',
+        'profiles.recipientprofile': 'fas fa-procedures',
+        'matches.organmatch': 'fas fa-link',
+        'matches.matchmessage': 'fas fa-comments',
+        'matches.matchpreference': 'fas fa-sliders-h',
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
